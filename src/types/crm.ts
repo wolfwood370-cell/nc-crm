@@ -156,6 +156,34 @@ export interface Service {
   name: string;
   price: number;
   sort_order: number;
+  duration_months: number;
+}
+
+export interface PersonalExpense {
+  id: string;
+  name: string;
+  amount: number;
+  is_recurring: boolean;
+  category: string;
+  created_at: string;
+}
+
+export interface LifeGoal {
+  id: string;
+  title: string;
+  total_target_amount: number;
+  current_savings: number;
+  deadline: string;        // ISO date YYYY-MM-DD
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface DynamicTarget {
+  monthlyGoalSaving: number;       // risparmio mensile per coprire l'obiettivo attivo
+  totalRecurringExpenses: number;  // somma spese personali ricorrenti
+  totalNetNeeded: number;          // recurring + monthlyGoalSaving
+  dynamicGrossTarget: number;      // (totalNetNeeded + 366) / (1 - 0.249)
+  monthsUntilDeadline: number;     // mesi residui all'obiettivo (>=1)
 }
 
 export const HISTORY_START_YEAR = 2026;
