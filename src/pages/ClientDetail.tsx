@@ -41,6 +41,8 @@ const ClientDetail = () => {
   const [gender, setGender] = useState<Gender | ''>('');
   const [gymSignup, setGymSignup] = useState('');
   const [gymExpiry, setGymExpiry] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
 
   // ROI metric form
   const [metricName, setMetricName] = useState('');
@@ -61,6 +63,8 @@ const ClientDetail = () => {
       setGender(client.gender ?? '');
       setGymSignup(client.gym_signup_date ? client.gym_signup_date.slice(0, 10) : '');
       setGymExpiry(client.gym_expiry_date ? client.gym_expiry_date.slice(0, 10) : '');
+      setPhone(client.phone ?? '');
+      setEmail(client.email ?? '');
     }
   }, [client]);
 
@@ -91,6 +95,8 @@ const ClientDetail = () => {
       gender: (gender || undefined) as Gender | undefined,
       gym_signup_date: gymSignup || undefined,
       gym_expiry_date: gymExpiry || undefined,
+      phone: phone.trim() || undefined,
+      email: email.trim() || undefined,
     });
     toast.success('Profilo aggiornato');
   };
@@ -374,6 +380,28 @@ const ClientDetail = () => {
             <section className="rounded-2xl border border-border bg-card p-4 space-y-4 shadow-card">
               <h3 className="font-bold text-sm text-foreground">Anagrafica & Iscrizione</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Telefono</label>
+                  <Input
+                    type="tel"
+                    inputMode="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="es. +39 333 1234567"
+                    className="h-12 rounded-xl bg-secondary border-0 text-base"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Email</label>
+                  <Input
+                    type="email"
+                    inputMode="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="es. mario@email.it"
+                    className="h-12 rounded-xl bg-secondary border-0 text-base"
+                  />
+                </div>
                 <div className="space-y-2">
                   <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Data di nascita</label>
                   <Input

@@ -42,6 +42,7 @@ export interface Client {
   roi_metrics?: RoiMetric[];
   notes?: string;
   phone?: string;
+  email?: string;
   birth_date?: string;        // ISO date (YYYY-MM-DD)
   gender?: Gender;
   gym_signup_date?: string;   // ISO date

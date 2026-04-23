@@ -19,6 +19,7 @@ export type Database = {
           birth_date: string | null
           churn_risk: string | null
           created_at: string
+          email: string | null
           gender: string | null
           gym_expiry_date: string | null
           gym_signup_date: string | null
@@ -42,6 +43,7 @@ export type Database = {
           birth_date?: string | null
           churn_risk?: string | null
           created_at?: string
+          email?: string | null
           gender?: string | null
           gym_expiry_date?: string | null
           gym_signup_date?: string | null
@@ -65,6 +67,7 @@ export type Database = {
           birth_date?: string | null
           churn_risk?: string | null
           created_at?: string
+          email?: string | null
           gender?: string | null
           gym_expiry_date?: string | null
           gym_signup_date?: string | null
