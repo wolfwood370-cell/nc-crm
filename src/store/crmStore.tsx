@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import {
   Client, FIXED_MONTHLY_COST, TAX_RATE, RoiMetric, LeadSource, PipelineStage,
   ChurnRisk, Gender, Transaction, PaymentType, PaymentMethod,
+  Service, MonthlyBreakdown, HISTORY_START_YEAR, HISTORY_START_MONTH,
 } from '@/types/crm';
 import { CrmContext, CrmContextValue } from './crmContext';
 
