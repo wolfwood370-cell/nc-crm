@@ -1,5 +1,5 @@
 // Edge Function: analyze-win-loss
-// Analizza le obiezioni reali dei clienti persi e genera un report AI in italiano.
+// Sales Strategy Director: pattern recognition su trattative perse + nudge imprenditoriale.
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -15,12 +15,20 @@ interface LostClient {
   root_motivator?: string;
 }
 
-const SYSTEM_PROMPT = `Sei un coach di vendita esperto in personal training high-ticket.
-Analizzi le trattative perse di un singolo Personal Trainer indipendente per identificare i pattern reali di rifiuto.
+interface GoalContext {
+  title?: string;
+  monthly_target?: number;
+  current_monthly_revenue?: number;
+  avg_deal_value?: number;
+}
 
-Devi produrre un report sintetico in italiano con DUE sezioni:
-1) "perche_perdiamo": esattamente 3 bullet brevi (max 18 parole ciascuno) che identificano i pattern ricorrenti tra le obiezioni reali. Ogni bullet deve essere concreto, non generico.
-2) "azioni_correttive": esattamente 3 bullet azionabili (max 22 parole ciascuno) che il PT può applicare la prossima settimana per migliorare il pitch. Niente teoria, solo cose da fare.
+const SYSTEM_PROMPT = `Sei un Direttore Vendite di un brand premium di Personal Training high-ticket in Italia.
+Stai analizzando le trattative perse di un singolo Personal Trainer indipendente per individuare attriti ricorrenti nel pitch fatto in palestra (spesso Fitactive) e correggerli la settimana successiva.
+
+Devi essere:
+- Concreto: niente teoria generica, solo pattern osservabili nei casi forniti.
+- Strategico: collega le obiezioni reali a un cambiamento specifico nello script di vendita iniziale.
+- Imprenditoriale: tieni conto del traguardo mensile del PT e quantifica il gap.
 
 Rispondi SOLO chiamando la funzione "return_winloss_report".`;
 
@@ -28,28 +36,49 @@ const TOOL = {
   type: "function",
   function: {
     name: "return_winloss_report",
-    description: "Restituisce il report Win/Loss strutturato.",
+    description: "Restituisce il report Win/Loss strutturato con nudge imprenditoriale.",
     parameters: {
       type: "object",
       properties: {
+        friction_points: {
+          type: "array",
+          description: "Esattamente 2 punti di attrito principali individuati nei pattern.",
+          items: {
+            type: "object",
+            properties: {
+              titolo: { type: "string", description: "Etichetta breve dell'attrito (max 6 parole)." },
+              descrizione: { type: "string", description: "Spiegazione concreta in max 25 parole." },
+            },
+            required: ["titolo", "descrizione"],
+            additionalProperties: false,
+          },
+          minItems: 2,
+          maxItems: 2,
+        },
         perche_perdiamo: {
           type: "array",
+          description: "Esattamente 3 bullet brevi (max 18 parole) sui pattern ricorrenti tra le obiezioni reali.",
           items: { type: "string" },
           minItems: 3,
           maxItems: 3,
         },
         azioni_correttive: {
           type: "array",
+          description: "Esattamente 3 azioni concrete (max 22 parole) da applicare nel pitch iniziale in Fitactive la prossima settimana.",
           items: { type: "string" },
           minItems: 3,
           maxItems: 3,
         },
         sintesi: {
           type: "string",
-          description: "Una frase sintetica (max 25 parole) che riassume il pattern principale.",
+          description: "Una frase (max 25 parole) che riassume il pattern principale.",
+        },
+        entrepreneurial_nudge: {
+          type: "string",
+          description: "Frase motivazionale e quantitativa (max 35 parole) che lega il gap mensile al goal di vita (es. viaggio Tokyo): quanti deal ancora servono per restare in traiettoria. Tono diretto, professionale, non paternalistico.",
         },
       },
-      required: ["perche_perdiamo", "azioni_correttive", "sintesi"],
+      required: ["friction_points", "perche_perdiamo", "azioni_correttive", "sintesi", "entrepreneurial_nudge"],
       additionalProperties: false,
     },
   },
@@ -69,7 +98,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { lost_clients } = (await req.json()) as { lost_clients: LostClient[] };
+    const { lost_clients, goal_context } = (await req.json()) as {
+      lost_clients: LostClient[];
+      goal_context?: GoalContext;
+    };
     if (!Array.isArray(lost_clients) || lost_clients.length === 0) {
       return new Response(JSON.stringify({ error: "Nessun cliente perso da analizzare" }), {
         status: 400,
@@ -87,7 +119,17 @@ Deno.serve(async (req) => {
       })
       .join('\n\n');
 
-    const userPrompt = `Ecco ${lost_clients.length} trattative perse da analizzare:\n\n${formatted}\n\nGenera il report seguendo le regole.`;
+    const goalBlock = goal_context
+      ? `\n\nContesto imprenditoriale del PT:
+- Obiettivo di vita attivo: ${goal_context.title || 'non specificato'}
+- Target di fatturato mensile (€): ${goal_context.monthly_target ?? 'n/d'}
+- Fatturato mensile attuale (€): ${goal_context.current_monthly_revenue ?? 'n/d'}
+- Valore medio per deal (€/mese): ${goal_context.avg_deal_value ?? 'n/d'}
+
+Calcola il gap rispetto al target e usalo per il campo "entrepreneurial_nudge" indicando quanti deal aggiuntivi servono per restare in traiettoria.`
+      : '';
+
+    const userPrompt = `Ecco ${lost_clients.length} trattative perse da analizzare:\n\n${formatted}${goalBlock}\n\nGenera il report seguendo la struttura del tool.`;
 
     const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -121,7 +163,7 @@ Deno.serve(async (req) => {
     if (!aiResp.ok) {
       const t = await aiResp.text();
       console.error("AI gateway error", aiResp.status, t);
-      return new Response(JSON.stringify({ error: "Errore del gateway AI" }), {
+      return new Response(JSON.stringify({ error: "Servizio AI momentaneamente non disponibile" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

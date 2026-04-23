@@ -1,21 +1,26 @@
 import { useMemo, useState } from 'react';
 import { useCrm } from '@/store/useCrm';
+import { usePrivacyMode } from '@/store/usePrivacyMode';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { BarChart3, Sparkles, Loader2, TrendingDown, Trophy, Lightbulb, Target, AlertCircle } from 'lucide-react';
+import { BarChart3, Sparkles, Loader2, TrendingDown, Trophy, Lightbulb, Target, AlertCircle, Rocket, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatEuro } from '@/types/crm';
 import { ClientsSheet } from '@/components/crm/ClientsSheet';
 
+interface FrictionPoint { titolo: string; descrizione: string }
 interface WinLossReport {
+  friction_points?: FrictionPoint[];
   perche_perdiamo: string[];
   azioni_correttive: string[];
   sintesi: string;
+  entrepreneurial_nudge?: string;
 }
 
 const SalesCoach = () => {
-  const { clients, isLoading } = useCrm();
+  const { clients, isLoading, financials, lifeGoals } = useCrm();
+  const { privacyMode } = usePrivacyMode();
   const [generating, setGenerating] = useState(false);
   const [report, setReport] = useState<WinLossReport | null>(null);
   const [analyzedCount, setAnalyzedCount] = useState<number>(0);
@@ -42,18 +47,33 @@ const SalesCoach = () => {
       toast.error('Nessuna trattativa persa da analizzare');
       return;
     }
+    if (privacyMode) {
+      toast.warning('Modalità Privacy attiva: i nomi dei clienti non saranno inviati all\'AI.');
+    }
     setGenerating(true);
     setReport(null);
     try {
+      const activeGoal = lifeGoals?.find(g => g.is_active);
+      const avgDeal = wonClients.length > 0
+        ? Math.round(wonClients.reduce((s, c) => s + (c.monthly_value || 0), 0) / wonClients.length)
+        : 0;
+
       const { data, error } = await supabase.functions.invoke('analyze-win-loss', {
         body: {
           lost_clients: lostClients.map(c => ({
-            name: c.name,
+            // mascheriamo il nome se Modalità Privacy attiva
+            name: privacyMode ? `Cliente #${c.id.slice(0, 4)}` : c.name,
             lead_source: c.lead_source,
             objection_stated: c.objection_stated,
             objection_real: c.objection_real,
             root_motivator: c.root_motivator,
           })),
+          goal_context: {
+            title: activeGoal?.title,
+            monthly_target: financials?.monthly_target,
+            current_monthly_revenue: financials?.current_monthly_revenue,
+            avg_deal_value: avgDeal,
+          },
         },
       });
       if (error) throw error;
@@ -61,13 +81,12 @@ const SalesCoach = () => {
       if (!data?.report) throw new Error('Report AI vuoto');
       setReport(data.report as WinLossReport);
       setAnalyzedCount(data.analyzed ?? lostClients.length);
-      toast.success('Report generato');
+      toast.success('Coach Insight pronto');
     } catch (e) {
       const raw = e instanceof Error ? e.message : '';
-      let msg = 'Errore di connessione all\'AI';
+      let msg = 'Servizio AI momentaneamente non disponibile';
       if (/429|limite|rate/i.test(raw)) msg = 'Limite di richieste raggiunto. Riprova tra qualche istante.';
       else if (/402|crediti|payment/i.test(raw)) msg = 'Crediti AI esauriti. Aggiungi fondi al workspace.';
-      else if (raw) msg = raw;
       toast.error(msg);
     } finally {
       setGenerating(false);
@@ -181,6 +200,24 @@ const SalesCoach = () => {
               <p className="text-sm text-foreground">{report.sintesi}</p>
             </div>
 
+            {/* Friction Points (top 2) */}
+            {report.friction_points && report.friction_points.length > 0 && (
+              <div className="rounded-xl border border-warning/40 bg-warning/5 p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <AlertCircle className="h-4 w-4 text-warning" />
+                  <p className="text-xs font-bold uppercase tracking-wider text-foreground">Top 2 Punti di Attrito</p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {report.friction_points.slice(0, 2).map((fp, i) => (
+                    <div key={i} className="rounded-lg bg-card border border-border p-2.5">
+                      <p className="text-xs font-bold text-foreground">{fp.titolo}</p>
+                      <p className="text-[11px] text-muted-foreground mt-1 leading-snug">{fp.descrizione}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Perché perdiamo */}
             <div className="rounded-xl border border-border bg-card p-3">
               <div className="flex items-center gap-2 mb-2">
@@ -216,6 +253,31 @@ const SalesCoach = () => {
                 ))}
               </ul>
             </div>
+
+            {/* Entrepreneurial Nudge — Coach Insight Premium Card */}
+            {report.entrepreneurial_nudge && (
+              <div className="relative overflow-hidden rounded-2xl border-2 border-primary/40 bg-gradient-to-br from-primary/10 via-accent/5 to-primary/15 p-4 shadow-glow">
+                <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-primary/20 blur-2xl" aria-hidden />
+                <div className="relative flex items-start gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-glow">
+                    <Rocket className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-primary mb-1">Coach Insight · Imprenditoriale</p>
+                    <p className="text-sm text-foreground leading-relaxed font-medium">{report.entrepreneurial_nudge}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {privacyMode && (
+          <div className="flex items-center gap-2 rounded-xl bg-muted/40 border border-border px-3 py-2 mt-1">
+            <EyeOff className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            <p className="text-[11px] text-muted-foreground">
+              Modalità Privacy attiva: i nomi clienti vengono mascherati prima dell'invio all'AI.
+            </p>
           </div>
         )}
       </section>
