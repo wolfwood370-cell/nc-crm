@@ -1,21 +1,26 @@
 import { useMemo, useState } from 'react';
 import { useCrm } from '@/store/useCrm';
+import { usePrivacyMode } from '@/store/usePrivacyMode';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { BarChart3, Sparkles, Loader2, TrendingDown, Trophy, Lightbulb, Target, AlertCircle } from 'lucide-react';
+import { BarChart3, Sparkles, Loader2, TrendingDown, Trophy, Lightbulb, Target, AlertCircle, Rocket, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatEuro } from '@/types/crm';
 import { ClientsSheet } from '@/components/crm/ClientsSheet';
 
+interface FrictionPoint { titolo: string; descrizione: string }
 interface WinLossReport {
+  friction_points?: FrictionPoint[];
   perche_perdiamo: string[];
   azioni_correttive: string[];
   sintesi: string;
+  entrepreneurial_nudge?: string;
 }
 
 const SalesCoach = () => {
-  const { clients, isLoading } = useCrm();
+  const { clients, isLoading, financials, lifeGoals } = useCrm();
+  const { privacyMode } = usePrivacyMode();
   const [generating, setGenerating] = useState(false);
   const [report, setReport] = useState<WinLossReport | null>(null);
   const [analyzedCount, setAnalyzedCount] = useState<number>(0);
@@ -42,18 +47,33 @@ const SalesCoach = () => {
       toast.error('Nessuna trattativa persa da analizzare');
       return;
     }
+    if (privacyMode) {
+      toast.warning('Modalità Privacy attiva: i nomi dei clienti non saranno inviati all\'AI.');
+    }
     setGenerating(true);
     setReport(null);
     try {
+      const activeGoal = lifeGoals?.find(g => g.is_active);
+      const avgDeal = wonClients.length > 0
+        ? Math.round(wonClients.reduce((s, c) => s + (c.monthly_value || 0), 0) / wonClients.length)
+        : 0;
+
       const { data, error } = await supabase.functions.invoke('analyze-win-loss', {
         body: {
           lost_clients: lostClients.map(c => ({
-            name: c.name,
+            // mascheriamo il nome se Modalità Privacy attiva
+            name: privacyMode ? `Cliente #${c.id.slice(0, 4)}` : c.name,
             lead_source: c.lead_source,
             objection_stated: c.objection_stated,
             objection_real: c.objection_real,
             root_motivator: c.root_motivator,
           })),
+          goal_context: {
+            title: activeGoal?.title,
+            monthly_target: financials?.monthly_target,
+            current_monthly_revenue: financials?.current_monthly_revenue,
+            avg_deal_value: avgDeal,
+          },
         },
       });
       if (error) throw error;
@@ -61,13 +81,12 @@ const SalesCoach = () => {
       if (!data?.report) throw new Error('Report AI vuoto');
       setReport(data.report as WinLossReport);
       setAnalyzedCount(data.analyzed ?? lostClients.length);
-      toast.success('Report generato');
+      toast.success('Coach Insight pronto');
     } catch (e) {
       const raw = e instanceof Error ? e.message : '';
-      let msg = 'Errore di connessione all\'AI';
+      let msg = 'Servizio AI momentaneamente non disponibile';
       if (/429|limite|rate/i.test(raw)) msg = 'Limite di richieste raggiunto. Riprova tra qualche istante.';
       else if (/402|crediti|payment/i.test(raw)) msg = 'Crediti AI esauriti. Aggiungi fondi al workspace.';
-      else if (raw) msg = raw;
       toast.error(msg);
     } finally {
       setGenerating(false);
