@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { BarChart3, Sparkles, Loader2, TrendingDown, Trophy, Lightbulb, Target, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatEuro } from '@/types/crm';
+import { ClientsSheet } from '@/components/crm/ClientsSheet';
 
 interface WinLossReport {
   perche_perdiamo: string[];
@@ -18,14 +19,22 @@ const SalesCoach = () => {
   const [generating, setGenerating] = useState(false);
   const [report, setReport] = useState<WinLossReport | null>(null);
   const [analyzedCount, setAnalyzedCount] = useState<number>(0);
+  const [drill, setDrill] = useState<null | 'won' | 'lost'>(null);
 
-  const { won, lost, lostClients, conversionRate, lostRevenue } = useMemo(() => {
-    const won = clients.filter(c => c.pipeline_stage === 'Closed Won');
-    const lost = clients.filter(c => c.pipeline_stage === 'Closed Lost');
-    const total = won.length + lost.length;
-    const conv = total > 0 ? Math.round((won.length / total) * 100) : 0;
-    const lostRev = lost.reduce((s, c) => s + (c.monthly_value || 0), 0);
-    return { won: won.length, lost: lost.length, lostClients: lost, conversionRate: conv, lostRevenue: lostRev };
+  const { won, lost, wonClients, lostClients, conversionRate, lostRevenue } = useMemo(() => {
+    const wonList = clients.filter(c => c.pipeline_stage === 'Closed Won');
+    const lostList = clients.filter(c => c.pipeline_stage === 'Closed Lost');
+    const total = wonList.length + lostList.length;
+    const conv = total > 0 ? Math.round((wonList.length / total) * 100) : 0;
+    const lostRev = lostList.reduce((s, c) => s + (c.monthly_value || 0), 0);
+    return {
+      won: wonList.length,
+      lost: lostList.length,
+      wonClients: wonList,
+      lostClients: lostList,
+      conversionRate: conv,
+      lostRevenue: lostRev,
+    };
   }, [clients]);
 
   const handleGenerate = async () => {
@@ -78,8 +87,8 @@ const SalesCoach = () => {
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <KpiCard icon={<Trophy className="h-4 w-4" />} label="Vinte" value={String(won)} tone="primary" />
-          <KpiCard icon={<TrendingDown className="h-4 w-4" />} label="Perse" value={String(lost)} tone="destructive" />
+          <KpiCard icon={<Trophy className="h-4 w-4" />} label="Totale Chiusi Vinti" value={String(won)} tone="primary" onClick={() => setDrill('won')} />
+          <KpiCard icon={<TrendingDown className="h-4 w-4" />} label="Totale Persi" value={String(lost)} tone="destructive" onClick={() => setDrill('lost')} />
           <KpiCard icon={<Target className="h-4 w-4" />} label="Tasso Conversione" value={`${conversionRate}%`} tone="warning" />
           <KpiCard icon={<BarChart3 className="h-4 w-4" />} label="Ricavo Perso/mese" value={formatEuro(lostRevenue)} tone="muted" />
         </div>
@@ -174,26 +183,48 @@ const SalesCoach = () => {
           </div>
         )}
       </section>
+
+      <ClientsSheet
+        open={drill === 'won'}
+        onOpenChange={(v) => { if (!v) setDrill(null); }}
+        title="Clienti Chiusi Vinti"
+        description={`${wonClients.length} client${wonClients.length === 1 ? 'e attivo' : 'i attivi'}`}
+        clients={wonClients}
+      />
+      <ClientsSheet
+        open={drill === 'lost'}
+        onOpenChange={(v) => { if (!v) setDrill(null); }}
+        title="Trattative Perse"
+        description="Obiezione reale e motivazione profonda inline per analisi rapida."
+        clients={lostClients}
+        showLossContext
+      />
     </div>
   );
 };
 
-const KpiCard = ({ icon, label, value, tone }: { icon: React.ReactNode; label: string; value: string; tone: 'primary' | 'destructive' | 'warning' | 'muted' }) => {
+const KpiCard = ({ icon, label, value, tone, onClick }: { icon: React.ReactNode; label: string; value: string; tone: 'primary' | 'destructive' | 'warning' | 'muted'; onClick?: () => void }) => {
   const toneClass = {
     primary: 'bg-primary/10 text-primary',
     destructive: 'bg-destructive/10 text-destructive',
     warning: 'bg-warning/10 text-warning',
     muted: 'bg-muted text-muted-foreground',
   }[tone];
-  return (
-    <div className="rounded-2xl border border-border bg-card p-4 shadow-card">
+  const base = 'rounded-2xl border border-border bg-card p-4 shadow-card text-left';
+  const interactive = onClick ? ' hover:border-primary/40 transition-smooth active:scale-[0.99] w-full' : '';
+  const Inner = (
+    <>
       <div className={`inline-flex h-8 w-8 items-center justify-center rounded-lg ${toneClass}`}>
         {icon}
       </div>
       <p className="mt-2 text-[10px] text-muted-foreground uppercase tracking-wider">{label}</p>
       <p className="mt-0.5 text-xl md:text-2xl font-bold text-foreground">{value}</p>
-    </div>
+    </>
   );
+  if (onClick) {
+    return <button type="button" onClick={onClick} className={base + interactive}>{Inner}</button>;
+  }
+  return <div className={base}>{Inner}</div>;
 };
 
 export default SalesCoach;
