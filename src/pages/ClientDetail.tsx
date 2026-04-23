@@ -38,10 +38,11 @@ const todayIso = () => new Date().toISOString().slice(0, 10);
 const ClientDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { clients, updateClient, deleteClient, moveClient, addRoiMetric, removeRoiMetric, isLoading, transactions, addTransaction, stopRecurringPayment, markTransactionPaid } = useCrm();
+  const { clients, updateClient, deleteClient, moveClient, addRoiMetric, removeRoiMetric, isLoading, transactions, services, addTransaction, stopRecurringPayment, markTransactionPaid } = useCrm();
   const client = clients.find(c => c.id === id);
 
   // Inline payment form state
+  const [payServiceId, setPayServiceId] = useState<string>('');
   const [payAmount, setPayAmount] = useState('');
   const [payType, setPayType] = useState<PaymentType>('Unica Soluzione');
   const [payInstallments, setPayInstallments] = useState(2);
@@ -175,6 +176,7 @@ const ClientDetail = () => {
             : `Pagamento di ${formatEuro(value)} registrato (${payMethod})`
       );
       setPayAmount('');
+      setPayServiceId('');
       setPayType('Unica Soluzione');
       setPayInstallments(2);
       setPayDate(todayIso());
@@ -463,6 +465,38 @@ const ClientDetail = () => {
                         </span>
                       )}
                     </label>
+                  </div>
+
+                  {/* Servizio del Catalogo */}
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                      <Sparkles className="h-3 w-3" /> Servizio (opzionale)
+                    </label>
+                    <Select
+                      value={payServiceId || undefined}
+                      onValueChange={(v) => {
+                        setPayServiceId(v);
+                        const svc = services.find(s => s.id === v);
+                        if (svc) setPayAmount(String(svc.price));
+                      }}
+                    >
+                      <SelectTrigger className="h-12 rounded-xl bg-secondary border-0 text-sm font-semibold">
+                        <SelectValue placeholder="Seleziona dal catalogo…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from(new Set(services.map(s => s.category))).map(cat => (
+                          <div key={cat}>
+                            <div className="px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{cat}</div>
+                            {services.filter(s => s.category === cat).map(s => (
+                              <SelectItem key={s.id} value={s.id}>
+                                {s.name} — {formatEuro(s.price)}
+                              </SelectItem>
+                            ))}
+                          </div>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-[10px] text-muted-foreground">L'importo si compila automaticamente, ma puoi modificarlo.</p>
                   </div>
 
                   {/* Importo Totale */}
