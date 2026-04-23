@@ -91,11 +91,15 @@ export const TAX_RATE = 0.249; // 24.90% imposte/contributi
 export type PaymentType = 'Unica Soluzione' | 'A Rate';
 export const PAYMENT_TYPES: PaymentType[] = ['Unica Soluzione', 'A Rate'];
 
+export type PaymentMethod = 'Stripe' | 'Bonifico' | 'Contanti';
+export const PAYMENT_METHODS: PaymentMethod[] = ['Stripe', 'Bonifico', 'Contanti'];
+
 export interface Transaction {
   id: string;
   client_id: string;
   amount: number;
   payment_type: PaymentType;
+  payment_method: PaymentMethod;
   installments_count: number;
   payment_date: string; // ISO
   created_at: string;
