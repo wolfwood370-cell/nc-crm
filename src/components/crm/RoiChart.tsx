@@ -1,10 +1,13 @@
 import { useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
 import { RoiMetric } from '@/types/crm';
-import { TrendingUp } from 'lucide-react';
+import { TrendingUp, Share2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 interface Props {
   metrics: RoiMetric[];
+  clientName?: string;
 }
 
 // Group metrics by metric name; plot numeric portion of value over time
@@ -15,7 +18,7 @@ const extractNumber = (raw: string): number | null => {
 
 const palette = ['hsl(var(--primary))', 'hsl(var(--accent))', 'hsl(var(--warning))', 'hsl(var(--destructive))', 'hsl(var(--muted-foreground))'];
 
-export const RoiChart = ({ metrics }: Props) => {
+export const RoiChart = ({ metrics, clientName }: Props) => {
   const { data, series } = useMemo(() => {
     const byDate: Record<string, Record<string, number | string>> = {};
     const seriesSet = new Set<string>();

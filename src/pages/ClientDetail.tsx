@@ -480,6 +480,23 @@ const ClientDetail = () => {
                   />
                 </div>
               </div>
+
+              <label className="flex items-start gap-3 rounded-xl border border-border bg-secondary/40 p-3 cursor-pointer hover:bg-secondary/60 transition-smooth mt-2">
+                <Checkbox
+                  checked={gdprConsent}
+                  onCheckedChange={(v) => setGdprConsent(v === true)}
+                  className="mt-0.5"
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+                    <span className="text-sm font-semibold text-foreground">Consenso Privacy & Marketing Acquisito</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    Necessario per attivare l'AI Sales Assistant e l'invio di follow-up.
+                  </p>
+                </div>
+              </label>
             </section>
           </TabsContent>
 
