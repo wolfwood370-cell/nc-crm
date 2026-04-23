@@ -391,64 +391,149 @@ const ClientDetail = () => {
                           · {formatEuro(totalPaid)}
                         </span>
                       )}
+                <div className="space-y-3 sm:col-span-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                      <Receipt className="h-3.5 w-3.5" /> Registra Pagamento
+                      {clientTransactions.length > 0 && (
+                        <span className="ml-1 normal-case tracking-normal text-primary font-bold">
+                          · Totale {formatEuro(totalPaid)}
+                        </span>
+                      )}
                     </label>
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={() => setPaymentOpen(true)}
-                      className="h-9 rounded-lg gradient-primary text-primary-foreground font-semibold"
-                    >
-                      <Plus className="h-3.5 w-3.5 mr-1" /> Registra
-                    </Button>
                   </div>
 
-                  {clientTransactions.length === 0 ? (
-                    <div className="rounded-xl border border-dashed border-border bg-secondary/30 p-4 text-center">
-                      <p className="text-[11px] text-muted-foreground">
-                        Nessuna transazione registrata. Aggiungi il primo incasso.
-                      </p>
+                  {/* Importo Totale */}
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                      <Euro className="h-3 w-3" /> Importo Totale
+                    </label>
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        inputMode="decimal"
+                        min="0"
+                        step="0.01"
+                        value={payAmount}
+                        onChange={(e) => setPayAmount(e.target.value)}
+                        placeholder="0,00"
+                        className="h-14 rounded-xl bg-secondary border-0 text-2xl font-bold pr-10"
+                      />
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-lg font-bold text-muted-foreground">€</span>
                     </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {clientTransactions.slice(0, 5).map(t => (
-                        <div key={t.id} className="flex items-center gap-3 rounded-xl border border-border bg-secondary/40 p-3">
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                            <Euro className="h-4 w-4" />
+                  </div>
+
+                  {/* Tipo Pagamento */}
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Tipo Pagamento</label>
+                    <ToggleGroup
+                      type="single"
+                      value={payType}
+                      onValueChange={(v) => v && setPayType(v as PaymentType)}
+                      className="w-full grid grid-cols-2 gap-2"
+                    >
+                      <ToggleGroupItem
+                        value="Unica Soluzione"
+                        className="h-12 rounded-xl border border-border data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:border-primary text-xs font-semibold"
+                      >
+                        Unica Soluzione
+                      </ToggleGroupItem>
+                      <ToggleGroupItem
+                        value="A Rate"
+                        className="h-12 rounded-xl border border-border data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:border-primary text-xs font-semibold"
+                      >
+                        A Rate
+                      </ToggleGroupItem>
+                    </ToggleGroup>
+                    {payType === 'A Rate' && (
+                      <Select value={String(payInstallments)} onValueChange={(v) => setPayInstallments(Number(v))}>
+                        <SelectTrigger className="h-11 rounded-xl bg-secondary border-0 text-sm font-semibold mt-2">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[2, 3, 4, 5, 6].map(n => (
+                            <SelectItem key={n} value={String(n)}>{n} rate</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+
+                  {/* Metodo di Pagamento */}
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                      <CreditCard className="h-3 w-3" /> Metodo di Pagamento
+                    </label>
+                    <Select value={payMethod} onValueChange={(v) => setPayMethod(v as PaymentMethod)}>
+                      <SelectTrigger className="h-12 rounded-xl bg-secondary border-0 text-base font-semibold">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PAYMENT_METHODS.map(m => (
+                          <SelectItem key={m} value={m}>{m}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Data del Pagamento */}
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                      <CalendarClock className="h-3 w-3" /> Data del Pagamento
+                    </label>
+                    <Input
+                      type="date"
+                      value={payDate}
+                      max={todayIso()}
+                      onChange={(e) => setPayDate(e.target.value)}
+                      className="h-12 rounded-xl bg-secondary border-0 text-base font-semibold"
+                    />
+                  </div>
+
+                  <Button
+                    type="button"
+                    onClick={handleRegisterPayment}
+                    disabled={paySubmitting || !payAmount}
+                    className="w-full h-12 rounded-xl gradient-primary text-primary-foreground font-semibold"
+                  >
+                    {paySubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <Plus className="h-4 w-4 mr-1.5" />}
+                    Registra Pagamento
+                  </Button>
+
+                  {/* Storico recente */}
+                  {clientTransactions.length > 0 && (
+                    <div className="space-y-2 pt-2">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Ultime transazioni</p>
+                      {clientTransactions.slice(0, 3).map(t => (
+                        <div key={t.id} className="flex items-center gap-3 rounded-xl border border-border bg-secondary/40 p-2.5">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                            <Euro className="h-3.5 w-3.5" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-baseline justify-between gap-2">
-                              <p className="font-semibold text-sm text-foreground truncate">
+                              <p className="font-semibold text-xs text-foreground truncate">
                                 {t.payment_type === 'A Rate'
-                                  ? `${t.installments_count} rate da ${formatEuro(t.amount / t.installments_count)}`
+                                  ? `${t.installments_count}× ${formatEuro(t.amount / t.installments_count)}`
                                   : 'Unica Soluzione'}
+                                <span className="ml-1.5 text-[10px] font-normal text-muted-foreground">· {t.payment_method}</span>
                               </p>
-                              <p className="font-bold text-sm text-primary shrink-0">{formatEuro(t.amount)}</p>
+                              <p className="font-bold text-xs text-primary shrink-0">{formatEuro(t.amount)}</p>
                             </div>
-                            <p className="text-[11px] text-muted-foreground">
+                            <p className="text-[10px] text-muted-foreground">
                               {new Date(t.payment_date).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })}
                             </p>
                           </div>
                         </div>
                       ))}
-                      {clientTransactions.length > 5 && (
-                        <p className="text-[11px] text-muted-foreground text-center">
-                          +{clientTransactions.length - 5} altre transazioni
+                      {clientTransactions.length > 3 && (
+                        <p className="text-[10px] text-muted-foreground text-center">
+                          +{clientTransactions.length - 3} altre transazioni
                         </p>
                       )}
                     </div>
                   )}
                 </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                    <CalendarClock className="h-3.5 w-3.5" /> Prossimo Rinnovo
-                  </label>
-                  <Input
-                    type="date"
-                    value={renewal}
-                    onChange={(e) => setRenewal(e.target.value)}
-                    className="h-12 rounded-xl bg-secondary border-0 text-base"
-                  />
-                </div>
+
                 <div className="space-y-2 sm:col-span-2">
                   <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                     <MessageSquare className="h-3.5 w-3.5" /> Ultimo Contatto
