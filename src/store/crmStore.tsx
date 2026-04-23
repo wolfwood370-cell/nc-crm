@@ -406,7 +406,7 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
       net_monthly,
       gross_ytd,
       net_ytd,
-      fixed_monthly_cost: FIXED_MONTHLY_COST,
+      fixed_monthly_cost: rentCurrentMonth,
       monthly_target: monthlyTarget,
       current_month_number: monthNum,
     };
