@@ -473,9 +473,45 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
     onSuccess: invalidateGoals,
   });
 
+  const current_monthly_revenue = useMemo(
     () => clients.filter(c => c.pipeline_stage === 'Closed Won').reduce((s, c) => s + (c.monthly_value || 0), 0),
     [clients]
   );
+
+  // ---------- Dynamic Target ----------
+  const dynamicTarget = useMemo<DynamicTarget>(() => {
+    const totalRecurringExpenses = personalExpenses
+      .filter(e => e.is_recurring)
+      .reduce((s, e) => s + e.amount, 0);
+
+    const activeGoal = lifeGoals.find(g => g.is_active);
+    let monthlyGoalSaving = 0;
+    let monthsUntilDeadline = 0;
+    if (activeGoal) {
+      const now = new Date();
+      const deadline = new Date(activeGoal.deadline);
+      const diffMs = deadline.getTime() - now.getTime();
+      monthsUntilDeadline = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24 * 30.44)));
+      const remaining = Math.max(0, activeGoal.total_target_amount - activeGoal.current_savings);
+      monthlyGoalSaving = remaining / monthsUntilDeadline;
+    }
+
+    const totalNetNeeded = totalRecurringExpenses + monthlyGoalSaving;
+    const dynamicGrossTarget = (totalNetNeeded + FIXED_MONTHLY_COST) / (1 - TAX_RATE);
+
+    return {
+      totalRecurringExpenses,
+      monthlyGoalSaving,
+      totalNetNeeded,
+      dynamicGrossTarget,
+      monthsUntilDeadline,
+    };
+  }, [personalExpenses, lifeGoals]);
+
+  // Il target mensile della Dashboard segue il target dinamico se >0, altrimenti fallback manuale
+  const effectiveMonthlyTarget = dynamicTarget.dynamicGrossTarget > 0
+    ? dynamicTarget.dynamicGrossTarget
+    : monthlyTarget;
 
   const financialSummary = useMemo(() => {
     const now = new Date();
