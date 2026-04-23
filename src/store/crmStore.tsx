@@ -549,10 +549,10 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
       gross_ytd,
       net_ytd,
       fixed_monthly_cost: rentCurrentMonth,
-      monthly_target: monthlyTarget,
+      monthly_target: effectiveMonthlyTarget,
       current_month_number: monthNum,
     };
-  }, [transactions, monthlyTarget]);
+  }, [transactions, effectiveMonthlyTarget]);
 
   // Storico mensile a partire da Gennaio 2026 fino al mese corrente
   const monthlyBreakdown = useMemo<MonthlyBreakdown[]>(() => {
@@ -594,12 +594,15 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
     financials: {
       fixed_monthly_cost: financialSummary.fixed_monthly_cost,
       current_monthly_revenue,
-      monthly_target: monthlyTarget,
+      monthly_target: effectiveMonthlyTarget,
     },
     financialSummary,
     monthlyBreakdown,
     services,
     transactions,
+    personalExpenses,
+    lifeGoals,
+    dynamicTarget,
     addClient: async (c) => { await addMutation.mutateAsync(c); },
     updateClient: async (id, patch) => { await updateMutation.mutateAsync({ id, patch }); },
     deleteClient: async (id) => { await deleteMutation.mutateAsync(id); },
@@ -609,6 +612,12 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
     addTransaction: async (t) => { await addTransactionMutation.mutateAsync(t); },
     stopRecurringPayment: async (transactionId) => { await stopRecurringMutation.mutateAsync(transactionId); },
     markTransactionPaid: async (transactionId) => { await markPaidMutation.mutateAsync(transactionId); },
+    addPersonalExpense: async (e) => { await addExpenseMutation.mutateAsync(e); },
+    updatePersonalExpense: async (id, patch) => { await updateExpenseMutation.mutateAsync({ id, patch }); },
+    deletePersonalExpense: async (id) => { await deleteExpenseMutation.mutateAsync(id); },
+    addLifeGoal: async (g) => { await addGoalMutation.mutateAsync(g); },
+    updateLifeGoal: async (id, patch) => { await updateGoalMutation.mutateAsync({ id, patch }); },
+    deleteLifeGoal: async (id) => { await deleteGoalMutation.mutateAsync(id); },
     setMonthlyTarget,
   };
 
