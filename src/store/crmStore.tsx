@@ -147,6 +147,26 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
     queryFn: fetchTransactions,
   });
 
+  const { data: services = [] } = useQuery({
+    queryKey: ['crm', 'services'],
+    queryFn: async (): Promise<Service[]> => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any)
+        .from('services')
+        .select('*')
+        .order('sort_order', { ascending: true });
+      if (error) throw error;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return (data as any[]).map((r) => ({
+        id: r.id,
+        category: r.category,
+        name: r.name,
+        price: Number(r.price),
+        sort_order: r.sort_order,
+      }));
+    },
+  });
+
   // Realtime subscription
   useEffect(() => {
     const channel = supabase
