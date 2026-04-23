@@ -2,7 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useCrm, daysSince } from '@/store/useCrm';
 import {
   ChevronLeft, Heart, Shield, Eye, Phone, Euro, CalendarClock,
-  Sparkles, Activity, Plus, Trash2, MessageSquare, AlertTriangle, TrendingUp, Receipt, Loader2, CreditCard, Repeat, Ban,
+  Sparkles, Activity, Plus, Trash2, MessageSquare, AlertTriangle, TrendingUp, Receipt, Loader2, CreditCard, Repeat, Ban, CheckCircle2, Clock,
 } from 'lucide-react';
 import { SourceBadge } from '@/components/crm/SourceBadge';
 import { ChurnBadge, LeadScoreBadge } from '@/components/crm/ScoreBadges';
@@ -38,7 +38,7 @@ const todayIso = () => new Date().toISOString().slice(0, 10);
 const ClientDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { clients, updateClient, deleteClient, moveClient, addRoiMetric, removeRoiMetric, isLoading, transactions, addTransaction, stopRecurringPayment } = useCrm();
+  const { clients, updateClient, deleteClient, moveClient, addRoiMetric, removeRoiMetric, isLoading, transactions, addTransaction, stopRecurringPayment, markTransactionPaid } = useCrm();
   const client = clients.find(c => c.id === id);
 
   // Inline payment form state
@@ -52,12 +52,16 @@ const ClientDetail = () => {
 
   const clientTransactions = useMemo(
     () => transactions.filter(t => t.client_id === id).sort((a, b) =>
-      new Date(b.payment_date).getTime() - new Date(a.payment_date).getTime()
+      new Date(a.due_date).getTime() - new Date(b.due_date).getTime()
     ),
     [transactions, id]
   );
   const totalPaid = useMemo(
-    () => clientTransactions.reduce((s, t) => s + t.amount, 0),
+    () => clientTransactions.filter(t => t.status === 'Saldato').reduce((s, t) => s + t.amount, 0),
+    [clientTransactions]
+  );
+  const totalPending = useMemo(
+    () => clientTransactions.filter(t => t.status === 'In Attesa').reduce((s, t) => s + t.amount, 0),
     [clientTransactions]
   );
 
@@ -197,6 +201,15 @@ const ClientDetail = () => {
       toast.success('Pagamento ricorrente interrotto');
     } catch {
       toast.error("Errore nell'interruzione del pagamento");
+    }
+  };
+
+  const handleMarkPaid = async (transactionId: string) => {
+    try {
+      await markTransactionPaid(transactionId);
+      toast.success('Rata saldata con successo!');
+    } catch {
+      toast.error('Errore nel salvataggio della rata');
     }
   };
 
