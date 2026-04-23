@@ -180,20 +180,33 @@ const ClientDetail = () => {
           </div>
         </div>
 
-        {/* Stage selector */}
-        <section>
-          <label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Fase pipeline</label>
-          <Select value={client.pipeline_stage} onValueChange={(v) => handleStageChange(v as PipelineStage)}>
-            <SelectTrigger className="mt-2 h-14 rounded-xl border border-border bg-card text-base font-semibold">
-              <div className="flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: `hsl(var(--${stageColor}))` }} />
-                <SelectValue>{pipelineStageLabel[client.pipeline_stage]}</SelectValue>
-              </div>
-            </SelectTrigger>
-            <SelectContent>
-              {PIPELINE_STAGES.map(s => <SelectItem key={s} value={s}>{pipelineStageLabel[s]}</SelectItem>)}
-            </SelectContent>
-          </Select>
+        {/* Stage + Source selectors */}
+        <section className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Fase pipeline</label>
+            <Select value={client.pipeline_stage} onValueChange={(v) => handleStageChange(v as PipelineStage)}>
+              <SelectTrigger className="mt-2 h-14 rounded-xl border border-border bg-card text-base font-semibold">
+                <div className="flex items-center gap-2">
+                  <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: `hsl(var(--${stageColor}))` }} />
+                  <SelectValue>{pipelineStageLabel[client.pipeline_stage]}</SelectValue>
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                {PIPELINE_STAGES.map(s => <SelectItem key={s} value={s}>{pipelineStageLabel[s]}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Fonte contatto</label>
+            <Select value={client.lead_source} onValueChange={(v) => handleSourceChange(v as LeadSource)}>
+              <SelectTrigger className="mt-2 h-14 rounded-xl border border-border bg-card text-base font-semibold">
+                <SelectValue>{leadSourceLabel[client.lead_source]}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {LEAD_SOURCES.map(s => <SelectItem key={s} value={s}>{leadSourceLabel[s]}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
         </section>
 
         {/* Tabs */}
