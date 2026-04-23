@@ -351,18 +351,32 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
     const month = now.getMonth();
     const monthNum = month + 1;
 
+    // YTD: incassi dal 1° gennaio dell'anno corrente,
+    // ma mai prima dello start storico (Gennaio 2026)
+    const ytdStart = new Date(
+      Math.max(year, HISTORY_START_YEAR),
+      year > HISTORY_START_YEAR ? 0 : HISTORY_START_MONTH,
+      1
+    );
+
     let gross_monthly = 0;
     let gross_ytd = 0;
     for (const t of transactions) {
       if (t.status !== 'Saldato') continue;
       const d = new Date(t.payment_date);
+      if (d < ytdStart) continue;
       if (d.getFullYear() !== year) continue;
       gross_ytd += t.amount;
       if (d.getMonth() === month) gross_monthly += t.amount;
     }
 
+    // Numero di mesi trascorsi dall'inizio dello storico/anno per il calcolo netto YTD
+    const monthsElapsed = year > HISTORY_START_YEAR
+      ? monthNum
+      : Math.max(1, monthNum - HISTORY_START_MONTH);
+
     const net_monthly = gross_monthly - (gross_monthly * TAX_RATE) - FIXED_MONTHLY_COST;
-    const net_ytd = gross_ytd - (gross_ytd * TAX_RATE) - (FIXED_MONTHLY_COST * monthNum);
+    const net_ytd = gross_ytd - (gross_ytd * TAX_RATE) - (FIXED_MONTHLY_COST * monthsElapsed);
 
     return {
       gross_monthly,
@@ -375,6 +389,39 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [transactions, monthlyTarget]);
 
+  // Storico mensile a partire da Gennaio 2026 fino al mese corrente
+  const monthlyBreakdown = useMemo<MonthlyBreakdown[]>(() => {
+    const now = new Date();
+    const endYear = now.getFullYear();
+    const endMonth = now.getMonth();
+
+    // Aggrega per chiave "YYYY-M"
+    const map = new Map<string, number>();
+    for (const t of transactions) {
+      if (t.status !== 'Saldato') continue;
+      const d = new Date(t.payment_date);
+      const y = d.getFullYear();
+      const m = d.getMonth();
+      if (y < HISTORY_START_YEAR) continue;
+      if (y === HISTORY_START_YEAR && m < HISTORY_START_MONTH) continue;
+      const key = `${y}-${m}`;
+      map.set(key, (map.get(key) ?? 0) + t.amount);
+    }
+
+    const months: MonthlyBreakdown[] = [];
+    let y = HISTORY_START_YEAR;
+    let m = HISTORY_START_MONTH;
+    while (y < endYear || (y === endYear && m <= endMonth)) {
+      const gross = map.get(`${y}-${m}`) ?? 0;
+      const net = gross - (gross * TAX_RATE) - FIXED_MONTHLY_COST;
+      const label = new Date(y, m, 1).toLocaleDateString('it-IT', { month: 'short', year: 'numeric' });
+      months.push({ year: y, month: m, label, gross, net });
+      m += 1;
+      if (m > 11) { m = 0; y += 1; }
+    }
+    return months;
+  }, [transactions]);
+
   const value: CrmContextValue = {
     clients,
     isLoading,
@@ -384,6 +431,8 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
       monthly_target: monthlyTarget,
     },
     financialSummary,
+    monthlyBreakdown,
+    services,
     transactions,
     addClient: async (c) => { await addMutation.mutateAsync(c); },
     updateClient: async (id, patch) => { await updateMutation.mutateAsync({ id, patch }); },
