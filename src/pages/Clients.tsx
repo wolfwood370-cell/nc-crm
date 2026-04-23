@@ -2,21 +2,105 @@ import { useState, useMemo } from 'react';
 import { useCrm } from '@/store/crmStore';
 import { ClientCard } from '@/components/crm/ClientCard';
 import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
+import { Search, ArrowUpDown } from 'lucide-react';
 import { PIPELINE_STAGES, PipelineStage, pipelineStageLabel } from '@/types/crm';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+type SortKey =
+  | 'name_asc'
+  | 'name_desc'
+  | 'age_asc'      // giovane > vecchio (nascita più recente prima)
+  | 'age_desc'     // vecchio > giovane
+  | 'signup_asc'   // vecchi > recenti (iscrizione più vecchia prima)
+  | 'signup_desc'  // recenti > vecchi
+  | 'expiry_asc'   // scadenza più vicina prima
+  | 'expiry_desc'; // scadenza più lontana prima
+
+const SORT_LABELS: Record<SortKey, string> = {
+  name_asc: 'Nome (A → Z)',
+  name_desc: 'Nome (Z → A)',
+  age_asc: 'Età (giovane → vecchio)',
+  age_desc: 'Età (vecchio → giovane)',
+  signup_asc: 'Iscrizione (vecchi → recenti)',
+  signup_desc: 'Iscrizione (recenti → vecchi)',
+  expiry_asc: 'Scadenza (prima → dopo)',
+  expiry_desc: 'Scadenza (dopo → prima)',
+};
+
+const ts = (d?: string) => (d ? new Date(d).getTime() : NaN);
 
 const Clients = () => {
   const { clients, isLoading } = useCrm();
   const [q, setQ] = useState('');
   const [filter, setFilter] = useState<PipelineStage | 'All'>('All');
+  const [sort, setSort] = useState<SortKey>('name_asc');
 
   const filtered = useMemo(() => {
-    return clients
+    const list = clients
       .filter(c => filter === 'All' || c.pipeline_stage === filter)
       .filter(c => c.name.toLowerCase().includes(q.toLowerCase()));
-  }, [clients, q, filter]);
+
+    const sorted = [...list].sort((a, b) => {
+      switch (sort) {
+        case 'name_asc':
+          return a.name.localeCompare(b.name, 'it', { sensitivity: 'base' });
+        case 'name_desc':
+          return b.name.localeCompare(a.name, 'it', { sensitivity: 'base' });
+        case 'age_asc': {
+          // giovane = nato più di recente = data di nascita maggiore
+          const av = ts(a.birth_date);
+          const bv = ts(b.birth_date);
+          if (isNaN(av) && isNaN(bv)) return 0;
+          if (isNaN(av)) return 1;
+          if (isNaN(bv)) return -1;
+          return bv - av;
+        }
+        case 'age_desc': {
+          const av = ts(a.birth_date);
+          const bv = ts(b.birth_date);
+          if (isNaN(av) && isNaN(bv)) return 0;
+          if (isNaN(av)) return 1;
+          if (isNaN(bv)) return -1;
+          return av - bv;
+        }
+        case 'signup_asc': {
+          const av = ts(a.gym_signup_date);
+          const bv = ts(b.gym_signup_date);
+          if (isNaN(av) && isNaN(bv)) return 0;
+          if (isNaN(av)) return 1;
+          if (isNaN(bv)) return -1;
+          return av - bv;
+        }
+        case 'signup_desc': {
+          const av = ts(a.gym_signup_date);
+          const bv = ts(b.gym_signup_date);
+          if (isNaN(av) && isNaN(bv)) return 0;
+          if (isNaN(av)) return 1;
+          if (isNaN(bv)) return -1;
+          return bv - av;
+        }
+        case 'expiry_asc': {
+          const av = ts(a.gym_expiry_date);
+          const bv = ts(b.gym_expiry_date);
+          if (isNaN(av) && isNaN(bv)) return 0;
+          if (isNaN(av)) return 1;
+          if (isNaN(bv)) return -1;
+          return av - bv;
+        }
+        case 'expiry_desc': {
+          const av = ts(a.gym_expiry_date);
+          const bv = ts(b.gym_expiry_date);
+          if (isNaN(av) && isNaN(bv)) return 0;
+          if (isNaN(av)) return 1;
+          if (isNaN(bv)) return -1;
+          return bv - av;
+        }
+      }
+    });
+    return sorted;
+  }, [clients, q, filter, sort]);
 
   return (
     <div className="px-4 md:px-0 pt-6 pb-4 space-y-4 animate-fade-in">
@@ -25,14 +109,29 @@ const Clients = () => {
         <h1 className="mt-1 text-2xl md:text-3xl font-bold tracking-tight">Clienti</h1>
       </header>
 
-      <div className="relative">
-        <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Cerca per nome…"
-          className="h-12 pl-10 rounded-xl bg-secondary border-0 text-base"
-        />
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Cerca per nome…"
+            className="h-12 pl-10 rounded-xl bg-secondary border-0 text-base"
+          />
+        </div>
+        <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
+          <SelectTrigger className="h-12 w-auto min-w-[56px] sm:min-w-[220px] rounded-xl bg-secondary border-0 px-3 sm:px-4 gap-2">
+            <ArrowUpDown className="h-4 w-4 text-muted-foreground shrink-0" />
+            <span className="hidden sm:inline truncate text-sm font-semibold">
+              <SelectValue />
+            </span>
+          </SelectTrigger>
+          <SelectContent align="end">
+            {(Object.keys(SORT_LABELS) as SortKey[]).map(k => (
+              <SelectItem key={k} value={k}>{SORT_LABELS[k]}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0 md:flex-wrap">
