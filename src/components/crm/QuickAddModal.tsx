@@ -20,19 +20,25 @@ const todayLabel = () => new Date().toLocaleDateString('it-IT', { day: 'numeric'
 
 export const QuickAddModal = ({ open, onOpenChange }: Props) => {
   const { addClient } = useCrm();
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [source, setSource] = useState<LeadSource>('Gym Floor');
   const [stage, setStage] = useState<PipelineStage>('Lead Acquired');
   const [gdprConsent, setGdprConsent] = useState(false);
 
   const handleSave = async () => {
-    if (!name.trim()) {
-      toast.error('Il nome è obbligatorio');
+    const fn = firstName.trim();
+    const ln = lastName.trim();
+    if (!fn && !ln) {
+      toast.error('Nome o Cognome obbligatorio');
       return;
     }
+    const fullName = [fn, ln].filter(Boolean).join(' ');
     try {
       await addClient({
-        name: name.trim(),
+        name: fullName,
+        first_name: fn || undefined,
+        last_name: ln || undefined,
         lead_source: source,
         pipeline_stage: stage,
         root_motivator: '',
@@ -43,8 +49,9 @@ export const QuickAddModal = ({ open, onOpenChange }: Props) => {
         churn_risk: 'Basso',
         gdpr_consent: gdprConsent,
       });
-      toast.success(`${name} aggiunto alla pipeline`);
-      setName('');
+      toast.success(`${fullName} aggiunto alla pipeline`);
+      setFirstName('');
+      setLastName('');
       setSource('Gym Floor');
       setStage('Lead Acquired');
       setGdprConsent(false);
@@ -65,16 +72,28 @@ export const QuickAddModal = ({ open, onOpenChange }: Props) => {
           </div>
         </DialogHeader>
         <div className="space-y-5 mt-2">
-          <div className="space-y-2">
-            <Label htmlFor="name" className="text-xs uppercase tracking-wider text-muted-foreground">Nome</Label>
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="es. Marco Rossi"
-              autoFocus
-              className="h-12 rounded-xl bg-secondary border-0 text-base"
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="firstName" className="text-xs uppercase tracking-wider text-muted-foreground">Nome</Label>
+              <Input
+                id="firstName"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder="es. Marco"
+                autoFocus
+                className="h-12 rounded-xl bg-secondary border-0 text-base"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="lastName" className="text-xs uppercase tracking-wider text-muted-foreground">Cognome</Label>
+              <Input
+                id="lastName"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                placeholder="es. Rossi"
+                className="h-12 rounded-xl bg-secondary border-0 text-base"
+              />
+            </div>
           </div>
 
           <div className="space-y-2">
