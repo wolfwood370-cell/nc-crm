@@ -141,6 +141,7 @@ export type Database = {
           amount: number
           client_id: string
           created_at: string
+          due_date: string
           id: string
           installments_count: number
           payment_date: string
@@ -148,11 +149,13 @@ export type Database = {
           payment_type: string
           recurring_active: boolean
           recurring_stopped_at: string | null
+          status: string
         }
         Insert: {
           amount: number
           client_id: string
           created_at?: string
+          due_date?: string
           id?: string
           installments_count?: number
           payment_date?: string
@@ -160,11 +163,13 @@ export type Database = {
           payment_type: string
           recurring_active?: boolean
           recurring_stopped_at?: string | null
+          status?: string
         }
         Update: {
           amount?: number
           client_id?: string
           created_at?: string
+          due_date?: string
           id?: string
           installments_count?: number
           payment_date?: string
@@ -172,6 +177,7 @@ export type Database = {
           payment_type?: string
           recurring_active?: boolean
           recurring_stopped_at?: string | null
+          status?: string
         }
         Relationships: [
           {

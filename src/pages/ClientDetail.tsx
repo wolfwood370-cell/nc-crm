@@ -2,7 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useCrm, daysSince } from '@/store/useCrm';
 import {
   ChevronLeft, Heart, Shield, Eye, Phone, Euro, CalendarClock,
-  Sparkles, Activity, Plus, Trash2, MessageSquare, AlertTriangle, TrendingUp, Receipt, Loader2, CreditCard, Repeat, Ban,
+  Sparkles, Activity, Plus, Trash2, MessageSquare, AlertTriangle, TrendingUp, Receipt, Loader2, CreditCard, Repeat, Ban, CheckCircle2, Clock,
 } from 'lucide-react';
 import { SourceBadge } from '@/components/crm/SourceBadge';
 import { ChurnBadge, LeadScoreBadge } from '@/components/crm/ScoreBadges';
@@ -38,7 +38,7 @@ const todayIso = () => new Date().toISOString().slice(0, 10);
 const ClientDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { clients, updateClient, deleteClient, moveClient, addRoiMetric, removeRoiMetric, isLoading, transactions, addTransaction, stopRecurringPayment } = useCrm();
+  const { clients, updateClient, deleteClient, moveClient, addRoiMetric, removeRoiMetric, isLoading, transactions, addTransaction, stopRecurringPayment, markTransactionPaid } = useCrm();
   const client = clients.find(c => c.id === id);
 
   // Inline payment form state
@@ -52,12 +52,16 @@ const ClientDetail = () => {
 
   const clientTransactions = useMemo(
     () => transactions.filter(t => t.client_id === id).sort((a, b) =>
-      new Date(b.payment_date).getTime() - new Date(a.payment_date).getTime()
+      new Date(a.due_date).getTime() - new Date(b.due_date).getTime()
     ),
     [transactions, id]
   );
   const totalPaid = useMemo(
-    () => clientTransactions.reduce((s, t) => s + t.amount, 0),
+    () => clientTransactions.filter(t => t.status === 'Saldato').reduce((s, t) => s + t.amount, 0),
+    [clientTransactions]
+  );
+  const totalPending = useMemo(
+    () => clientTransactions.filter(t => t.status === 'In Attesa').reduce((s, t) => s + t.amount, 0),
     [clientTransactions]
   );
 
@@ -197,6 +201,15 @@ const ClientDetail = () => {
       toast.success('Pagamento ricorrente interrotto');
     } catch {
       toast.error("Errore nell'interruzione del pagamento");
+    }
+  };
+
+  const handleMarkPaid = async (transactionId: string) => {
+    try {
+      await markTransactionPaid(transactionId);
+      toast.success('Rata saldata con successo!');
+    } catch {
+      toast.error('Errore nel salvataggio della rata');
     }
   };
 
@@ -560,52 +573,93 @@ const ClientDetail = () => {
                     Registra Pagamento
                   </Button>
 
-                  {/* Storico recente */}
+                  {/* Piano Pagamenti */}
                   {clientTransactions.length > 0 && (
                     <div className="space-y-2 pt-2">
-                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Ultime transazioni</p>
-                      {clientTransactions.slice(0, 3).map(t => {
+                      <div className="flex items-center justify-between">
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Piano Pagamenti</p>
+                        {totalPending > 0 && (
+                          <p className="text-[10px] font-semibold text-warning">
+                            In attesa: {formatEuro(totalPending)}
+                          </p>
+                        )}
+                      </div>
+                      {clientTransactions.map(t => {
                         const isRecurring = t.payment_type === 'Ricorrente';
                         const isStopped = isRecurring && !t.recurring_active;
+                        const isPaid = t.status === 'Saldato';
+                        const dueDate = new Date(t.due_date);
+                        const todayMid = new Date();
+                        todayMid.setHours(0, 0, 0, 0);
+                        const dueMid = new Date(dueDate);
+                        dueMid.setHours(0, 0, 0, 0);
+                        const diff = Math.round((dueMid.getTime() - todayMid.getTime()) / 86400000);
+                        const isOverdue = !isPaid && diff < 0;
+                        const isImminent = !isPaid && diff >= 0 && diff <= 3;
+
+                        const wrap = isPaid
+                          ? 'border-border bg-secondary/40'
+                          : isOverdue
+                            ? 'border-destructive/40 bg-destructive/5'
+                            : isImminent
+                              ? 'border-warning/40 bg-warning/5'
+                              : 'border-border bg-card';
+                        const iconWrap = isPaid
+                          ? 'bg-primary/15 text-primary'
+                          : isOverdue
+                            ? 'bg-destructive/15 text-destructive'
+                            : 'bg-warning/15 text-warning';
+
                         return (
-                          <div key={t.id} className="flex items-center gap-3 rounded-xl border border-border bg-secondary/40 p-2.5">
-                            <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${isRecurring ? 'bg-accent/15 text-accent' : 'bg-primary/10 text-primary'}`}>
-                              {isRecurring ? <Repeat className="h-3.5 w-3.5" /> : <Euro className="h-3.5 w-3.5" />}
+                          <div key={t.id} className={`flex items-center gap-3 rounded-xl border p-2.5 ${wrap}`}>
+                            <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${iconWrap}`}>
+                              {isPaid ? <CheckCircle2 className="h-3.5 w-3.5" /> : isRecurring ? <Repeat className="h-3.5 w-3.5" /> : <Clock className="h-3.5 w-3.5" />}
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-baseline justify-between gap-2">
                                 <p className="font-semibold text-xs text-foreground truncate">
                                   {t.payment_type === 'A Rate'
-                                    ? `${t.installments_count}× ${formatEuro(t.amount / t.installments_count)}`
+                                    ? `Rata ${t.installments_count}× ${formatEuro(t.amount)}`
                                     : isRecurring
                                       ? `Ricorrente${isStopped ? ' (interrotto)' : ' · ogni 28g'}`
                                       : 'Unica Soluzione'}
                                   <span className="ml-1.5 text-[10px] font-normal text-muted-foreground">· {t.payment_method}</span>
                                 </p>
-                                <p className="font-bold text-xs text-primary shrink-0">{formatEuro(t.amount)}</p>
+                                <p className={`font-bold text-xs shrink-0 ${isPaid ? 'text-primary' : 'text-foreground'}`}>{formatEuro(t.amount)}</p>
                               </div>
                               <p className="text-[10px] text-muted-foreground">
-                                {new Date(t.payment_date).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                {isPaid ? 'Saldato il ' : 'Scadenza '}
+                                {(isPaid ? new Date(t.payment_date) : dueDate).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                {!isPaid && (
+                                  <span className={`ml-1.5 font-semibold ${isOverdue ? 'text-destructive' : isImminent ? 'text-warning' : ''}`}>
+                                    {isOverdue ? `· in ritardo di ${Math.abs(diff)}g` : diff === 0 ? '· oggi' : `· tra ${diff}g`}
+                                  </span>
+                                )}
                               </p>
                             </div>
-                            {isRecurring && !isStopped && (
+                            {!isPaid && (
+                              <button
+                                type="button"
+                                onClick={() => handleMarkPaid(t.id)}
+                                className="flex h-8 shrink-0 items-center gap-1 rounded-lg bg-primary px-2 text-[10px] font-bold uppercase tracking-wider text-primary-foreground hover:bg-primary/90 transition-smooth"
+                                aria-label="Segna come saldato"
+                              >
+                                <CheckCircle2 className="h-3 w-3" /> Salda
+                              </button>
+                            )}
+                            {isRecurring && !isStopped && isPaid && (
                               <button
                                 type="button"
                                 onClick={() => handleStopRecurring(t.id)}
                                 className="flex h-8 shrink-0 items-center gap-1 rounded-lg bg-destructive/10 px-2 text-[10px] font-bold uppercase tracking-wider text-destructive hover:bg-destructive/20 transition-smooth"
                                 aria-label="Interrompi pagamento ricorrente"
                               >
-                                <Ban className="h-3 w-3" /> Interrompi
+                                <Ban className="h-3 w-3" /> Stop
                               </button>
                             )}
                           </div>
                         );
                       })}
-                      {clientTransactions.length > 3 && (
-                        <p className="text-[10px] text-muted-foreground text-center">
-                          +{clientTransactions.length - 3} altre transazioni
-                        </p>
-                      )}
                     </div>
                   )}
                 </div>

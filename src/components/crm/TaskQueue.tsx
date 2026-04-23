@@ -1,6 +1,7 @@
 import { useCrm, daysSince } from '@/store/useCrm';
-import { AlertTriangle, Clock, Flame, Trophy, Zap, Target } from 'lucide-react';
+import { AlertTriangle, Clock, Flame, Trophy, Zap, Target, Receipt, AlarmClock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { formatEuro } from '@/types/crm';
 
 type Priority = 'critical' | 'high' | 'medium' | 'low';
 
@@ -42,10 +43,48 @@ const priorityStyles: Record<Priority, { wrap: string; chip: string; icon: strin
 };
 
 export const TaskQueue = () => {
-  const { clients } = useCrm();
+  const { clients, transactions } = useCrm();
   const navigate = useNavigate();
 
   const tasks: Task[] = [];
+
+  // Radar pagamenti: rate "In Attesa" in scadenza o scadute
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  transactions.forEach(t => {
+    if (t.status !== 'In Attesa') return;
+    const due = new Date(t.due_date);
+    due.setHours(0, 0, 0, 0);
+    const diffDays = Math.round((due.getTime() - today.getTime()) / 86400000);
+    const client = clients.find(c => c.id === t.client_id);
+    if (!client) return;
+
+    if (diffDays < 0) {
+      tasks.push({
+        icon: <AlertTriangle className="h-4 w-4" />,
+        priority: 'critical',
+        title: `RATA SCADUTA: ${client.name} è in ritardo col pagamento`,
+        subtitle: `${Math.abs(diffDays)}g di ritardo · ${formatEuro(t.amount)}`,
+        clientId: client.id,
+      });
+    } else if (diffDays <= 3) {
+      tasks.push({
+        icon: <AlarmClock className="h-4 w-4" />,
+        priority: 'high',
+        title: `Incasso imminente: tra ${diffDays}g scade la rata di ${client.name}`,
+        subtitle: `Rata da ${formatEuro(t.amount)}`,
+        clientId: client.id,
+      });
+    } else if (diffDays === 7) {
+      tasks.push({
+        icon: <Receipt className="h-4 w-4" />,
+        priority: 'medium',
+        title: `Tra 7 giorni scade la rata di ${client.name}`,
+        subtitle: `Rata da ${formatEuro(t.amount)}`,
+        clientId: client.id,
+      });
+    }
+  });
 
   clients.forEach(c => {
     const stageDays = daysSince(c.stage_updated_at);
