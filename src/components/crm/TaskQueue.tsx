@@ -6,6 +6,7 @@ import { formatEuro } from '@/types/crm';
 type Priority = 'critical' | 'high' | 'medium' | 'low';
 
 interface Task {
+  id: string;
   icon: React.ReactNode;
   title: string;
   subtitle: string;
