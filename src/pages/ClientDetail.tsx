@@ -605,7 +605,7 @@ const ClientDetail = () => {
                               ? 'border-warning/40 bg-warning/5'
                               : 'border-border bg-card';
                         const iconWrap = isPaid
-                          ? 'bg-success/15 text-success'
+                          ? 'bg-primary/15 text-primary'
                           : isOverdue
                             ? 'bg-destructive/15 text-destructive'
                             : 'bg-warning/15 text-warning';
@@ -625,7 +625,7 @@ const ClientDetail = () => {
                                       : 'Unica Soluzione'}
                                   <span className="ml-1.5 text-[10px] font-normal text-muted-foreground">· {t.payment_method}</span>
                                 </p>
-                                <p className={`font-bold text-xs shrink-0 ${isPaid ? 'text-success' : 'text-foreground'}`}>{formatEuro(t.amount)}</p>
+                                <p className={`font-bold text-xs shrink-0 ${isPaid ? 'text-primary' : 'text-foreground'}`}>{formatEuro(t.amount)}</p>
                               </div>
                               <p className="text-[10px] text-muted-foreground">
                                 {isPaid ? 'Saldato il ' : 'Scadenza '}
