@@ -1,12 +1,7 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { useEffect, useState, ReactNode } from 'react';
+import { PrivacyModeContext } from './privacyModeContext';
 
-interface PrivacyModeValue {
-  privacyMode: boolean;
-  togglePrivacyMode: () => void;
-  setPrivacyMode: (v: boolean) => void;
-}
-
-const PrivacyModeContext = createContext<PrivacyModeValue | null>(null);
+export { usePrivacyMode } from './usePrivacyMode';
 
 const STORAGE_KEY = 'pt_crm_privacy_mode';
 
@@ -33,10 +28,4 @@ export const PrivacyModeProvider = ({ children }: { children: ReactNode }) => {
       {children}
     </PrivacyModeContext.Provider>
   );
-};
-
-export const usePrivacyMode = () => {
-  const ctx = useContext(PrivacyModeContext);
-  if (!ctx) throw new Error('usePrivacyMode must be used within PrivacyModeProvider');
-  return ctx;
 };
