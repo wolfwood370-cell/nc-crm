@@ -221,11 +221,16 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
         queryClient.invalidateQueries({ queryKey: ['crm', 'clients'] });
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'roi_metrics' }, () => {
-        // ROI metrics sono lette insieme ai clients in fetchAll → invalida la query corretta
         queryClient.invalidateQueries({ queryKey: ['crm', 'clients'] });
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => {
         queryClient.invalidateQueries({ queryKey: ['crm', 'transactions'] });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'personal_expenses' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['crm', 'personal_expenses'] });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'life_goals' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['crm', 'life_goals'] });
       })
       .subscribe();
     return () => {
