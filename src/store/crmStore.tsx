@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import {
   Client, FIXED_MONTHLY_COST, TAX_RATE, RoiMetric, LeadSource, PipelineStage,
-  ChurnRisk, Gender, Transaction, PaymentType,
+  ChurnRisk, Gender, Transaction, PaymentType, PaymentMethod,
 } from '@/types/crm';
 import { CrmContext, CrmContextValue } from './crmContext';
 
@@ -99,6 +99,7 @@ type TransactionRow = {
   client_id: string;
   amount: number | string;
   payment_type: string;
+  payment_method?: string | null;
   installments_count: number;
   payment_date: string;
   created_at: string;
@@ -116,6 +117,7 @@ const fetchTransactions = async (): Promise<Transaction[]> => {
     client_id: r.client_id,
     amount: Number(r.amount),
     payment_type: r.payment_type as PaymentType,
+    payment_method: ((r.payment_method as PaymentMethod) ?? 'Stripe'),
     installments_count: r.installments_count,
     payment_date: r.payment_date,
     created_at: r.created_at,
@@ -238,6 +240,7 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
         client_id: t.client_id,
         amount: t.amount,
         payment_type: t.payment_type,
+        payment_method: t.payment_method ?? 'Stripe',
         installments_count: t.installments_count,
         payment_date: t.payment_date ?? new Date().toISOString(),
       });
