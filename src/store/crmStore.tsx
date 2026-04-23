@@ -450,7 +450,7 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
     clients,
     isLoading,
     financials: {
-      fixed_monthly_cost: FIXED_MONTHLY_COST,
+      fixed_monthly_cost: financialSummary.fixed_monthly_cost,
       current_monthly_revenue,
       monthly_target: monthlyTarget,
     },
