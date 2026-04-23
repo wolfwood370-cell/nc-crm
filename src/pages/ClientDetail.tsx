@@ -479,19 +479,25 @@ const ClientDetail = () => {
                       type="single"
                       value={payType}
                       onValueChange={(v) => v && setPayType(v as PaymentType)}
-                      className="w-full grid grid-cols-2 gap-2"
+                      className="w-full grid grid-cols-3 gap-2"
                     >
                       <ToggleGroupItem
                         value="Unica Soluzione"
-                        className="h-12 rounded-xl border border-border data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:border-primary text-xs font-semibold"
+                        className="h-12 rounded-xl border border-border data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:border-primary text-[11px] font-semibold"
                       >
-                        Unica Soluzione
+                        Unica
                       </ToggleGroupItem>
                       <ToggleGroupItem
                         value="A Rate"
-                        className="h-12 rounded-xl border border-border data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:border-primary text-xs font-semibold"
+                        className="h-12 rounded-xl border border-border data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:border-primary text-[11px] font-semibold"
                       >
                         A Rate
+                      </ToggleGroupItem>
+                      <ToggleGroupItem
+                        value="Ricorrente"
+                        className="h-12 rounded-xl border border-border data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:border-primary text-[11px] font-semibold"
+                      >
+                        <Repeat className="h-3 w-3 mr-1" /> Ricorrente
                       </ToggleGroupItem>
                     </ToggleGroup>
                     {payType === 'A Rate' && (
@@ -505,6 +511,11 @@ const ClientDetail = () => {
                           ))}
                         </SelectContent>
                       </Select>
+                    )}
+                    {payType === 'Ricorrente' && (
+                      <p className="text-[11px] text-muted-foreground mt-1.5 flex items-center gap-1.5">
+                        <Repeat className="h-3 w-3" /> Si ripete automaticamente ogni 28 giorni dal primo pagamento.
+                      </p>
                     )}
                   </div>
 
