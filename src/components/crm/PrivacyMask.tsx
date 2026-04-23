@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { usePrivacyMode } from '@/store/privacyMode';
+import { usePrivacyMode } from '@/store/usePrivacyMode';
 import { cn } from '@/lib/utils';
 
 interface Props {
