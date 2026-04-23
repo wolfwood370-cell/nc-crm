@@ -19,14 +19,22 @@ const SalesCoach = () => {
   const [generating, setGenerating] = useState(false);
   const [report, setReport] = useState<WinLossReport | null>(null);
   const [analyzedCount, setAnalyzedCount] = useState<number>(0);
+  const [drill, setDrill] = useState<null | 'won' | 'lost'>(null);
 
-  const { won, lost, lostClients, conversionRate, lostRevenue } = useMemo(() => {
-    const won = clients.filter(c => c.pipeline_stage === 'Closed Won');
-    const lost = clients.filter(c => c.pipeline_stage === 'Closed Lost');
-    const total = won.length + lost.length;
-    const conv = total > 0 ? Math.round((won.length / total) * 100) : 0;
-    const lostRev = lost.reduce((s, c) => s + (c.monthly_value || 0), 0);
-    return { won: won.length, lost: lost.length, lostClients: lost, conversionRate: conv, lostRevenue: lostRev };
+  const { won, lost, wonClients, lostClients, conversionRate, lostRevenue } = useMemo(() => {
+    const wonList = clients.filter(c => c.pipeline_stage === 'Closed Won');
+    const lostList = clients.filter(c => c.pipeline_stage === 'Closed Lost');
+    const total = wonList.length + lostList.length;
+    const conv = total > 0 ? Math.round((wonList.length / total) * 100) : 0;
+    const lostRev = lostList.reduce((s, c) => s + (c.monthly_value || 0), 0);
+    return {
+      won: wonList.length,
+      lost: lostList.length,
+      wonClients: wonList,
+      lostClients: lostList,
+      conversionRate: conv,
+      lostRevenue: lostRev,
+    };
   }, [clients]);
 
   const handleGenerate = async () => {
