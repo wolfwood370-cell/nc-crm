@@ -42,7 +42,19 @@ export interface Client {
   roi_metrics?: RoiMetric[];
   notes?: string;
   phone?: string;
+  birth_date?: string;        // ISO date (YYYY-MM-DD)
+  gender?: Gender;
+  gym_signup_date?: string;   // ISO date
+  gym_expiry_date?: string;   // ISO date
 }
+
+export type Gender = 'M' | 'F' | 'Altro';
+export const GENDERS: Gender[] = ['M', 'F', 'Altro'];
+export const genderLabel: Record<Gender, string> = {
+  M: 'Uomo',
+  F: 'Donna',
+  Altro: 'Altro',
+};
 
 export interface Financials {
   fixed_monthly_cost: number;
