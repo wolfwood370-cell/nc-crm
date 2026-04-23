@@ -369,6 +369,51 @@ const ClientDetail = () => {
                 </div>
               </div>
             </section>
+
+            {/* Anagrafica & Iscrizione palestra */}
+            <section className="rounded-2xl border border-border bg-card p-4 space-y-4 shadow-card">
+              <h3 className="font-bold text-sm text-foreground">Anagrafica & Iscrizione</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Data di nascita</label>
+                  <Input
+                    type="date"
+                    value={birthDate}
+                    onChange={(e) => setBirthDate(e.target.value)}
+                    className="h-12 rounded-xl bg-secondary border-0 text-base"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Sesso</label>
+                  <Select value={gender || undefined} onValueChange={(v) => setGender(v as Gender)}>
+                    <SelectTrigger className="h-12 rounded-xl bg-secondary border-0 text-base font-semibold">
+                      <SelectValue placeholder="Seleziona…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {GENDERS.map(g => <SelectItem key={g} value={g}>{genderLabel[g]}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Iscrizione palestra</label>
+                  <Input
+                    type="date"
+                    value={gymSignup}
+                    onChange={(e) => setGymSignup(e.target.value)}
+                    className="h-12 rounded-xl bg-secondary border-0 text-base"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Scadenza abbonamento</label>
+                  <Input
+                    type="date"
+                    value={gymExpiry}
+                    onChange={(e) => setGymExpiry(e.target.value)}
+                    className="h-12 rounded-xl bg-secondary border-0 text-base"
+                  />
+                </div>
+              </div>
+            </section>
           </TabsContent>
 
           {/* TAB 3 — ROI */}
