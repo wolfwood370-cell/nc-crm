@@ -382,15 +382,6 @@ const ClientDetail = () => {
             <section className="rounded-2xl border border-border bg-card p-4 space-y-4 shadow-card">
               <h3 className="font-bold text-sm text-foreground">Dati Commerciali</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2 sm:col-span-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                      <Receipt className="h-3.5 w-3.5" /> Pagamenti
-                      {clientTransactions.length > 0 && (
-                        <span className="ml-1 normal-case tracking-normal text-primary font-bold">
-                          · {formatEuro(totalPaid)}
-                        </span>
-                      )}
                 <div className="space-y-3 sm:col-span-2">
                   <div className="flex items-center justify-between gap-2">
                     <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
