@@ -126,6 +126,15 @@ export const AiFollowupGenerator = ({ client }: Props) => {
         </Button>
       )}
 
+      {eligible && hasConsent && privacyMode && (
+        <div className="flex items-center gap-2 rounded-xl bg-muted/40 border border-border px-3 py-2">
+          <EyeOff className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          <p className="text-[11px] text-muted-foreground">
+            Modalità Privacy: il nome verrà sostituito con un identificativo anonimo.
+          </p>
+        </div>
+      )}
+
       {loading && (
         <div className="space-y-3">
           {[0, 1, 2].map(i => (
