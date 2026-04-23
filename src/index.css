@@ -90,5 +90,6 @@
   .transition-smooth { transition: var(--transition-smooth); }
   .scrollbar-hide::-webkit-scrollbar { display: none; }
   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-  .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+  .safe-bottom { padding-bottom: max(env(safe-area-inset-bottom), 0.5rem); }
+  .safe-bottom-nav-spacer { height: max(env(safe-area-inset-bottom), 0.5rem); }
 }
