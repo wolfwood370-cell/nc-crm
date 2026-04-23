@@ -240,6 +240,7 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
         client_id: t.client_id,
         amount: t.amount,
         payment_type: t.payment_type,
+        payment_method: t.payment_method ?? 'Stripe',
         installments_count: t.installments_count,
         payment_date: t.payment_date ?? new Date().toISOString(),
       });
