@@ -16,6 +16,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   PIPELINE_STAGES, PipelineStage, stageColorMap, pipelineStageLabel,
   CHURN_RISKS, ChurnRisk, RoiMetric,
+  LEAD_SOURCES, LeadSource, leadSourceLabel,
+  GENDERS, Gender, genderLabel,
 } from '@/types/crm';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
@@ -35,6 +37,10 @@ const ClientDetail = () => {
   const [lastContact, setLastContact] = useState('');
   const [score, setScore] = useState<number>(50);
   const [churn, setChurn] = useState<ChurnRisk>('Basso');
+  const [birthDate, setBirthDate] = useState('');
+  const [gender, setGender] = useState<Gender | ''>('');
+  const [gymSignup, setGymSignup] = useState('');
+  const [gymExpiry, setGymExpiry] = useState('');
 
   // ROI metric form
   const [metricName, setMetricName] = useState('');
@@ -51,6 +57,10 @@ const ClientDetail = () => {
       setLastContact(client.last_contacted_at ? client.last_contacted_at.slice(0, 10) : '');
       setScore(client.lead_score ?? 50);
       setChurn(client.churn_risk ?? 'Basso');
+      setBirthDate(client.birth_date ? client.birth_date.slice(0, 10) : '');
+      setGender(client.gender ?? '');
+      setGymSignup(client.gym_signup_date ? client.gym_signup_date.slice(0, 10) : '');
+      setGymExpiry(client.gym_expiry_date ? client.gym_expiry_date.slice(0, 10) : '');
     }
   }, [client]);
 
@@ -77,8 +87,17 @@ const ClientDetail = () => {
       last_contacted_at: lastContact ? new Date(lastContact).toISOString() : undefined,
       lead_score: score,
       churn_risk: churn,
+      birth_date: birthDate || undefined,
+      gender: (gender || undefined) as Gender | undefined,
+      gym_signup_date: gymSignup || undefined,
+      gym_expiry_date: gymExpiry || undefined,
     });
     toast.success('Profilo aggiornato');
+  };
+
+  const handleSourceChange = (s: LeadSource) => {
+    updateClient(client!.id, { lead_source: s });
+    toast.success(`Fonte aggiornata: ${leadSourceLabel[s]}`);
   };
 
   const handleStageChange = (s: PipelineStage) => {
