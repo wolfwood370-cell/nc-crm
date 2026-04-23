@@ -1,20 +1,24 @@
 import { createContext } from 'react';
-import { Client, FinancialSummary, MonthlyBreakdown, PipelineStage, RoiMetric, Service, Transaction } from '@/types/crm';
+import {
+  Client, FinancialSummary, MonthlyBreakdown, PipelineStage, RoiMetric,
+  Service, Transaction, PersonalExpense, LifeGoal, DynamicTarget,
+} from '@/types/crm';
 
 export interface CrmContextValue {
   clients: Client[];
   isLoading: boolean;
-  // Legacy summary kept for components ancora dipendenti (BreakEvenGauge)
   financials: {
     fixed_monthly_cost: number;
     current_monthly_revenue: number;
     monthly_target: number;
   };
-  // Nuovo summary basato sulle transazioni reali
   financialSummary: FinancialSummary;
   monthlyBreakdown: MonthlyBreakdown[];
   services: Service[];
   transactions: Transaction[];
+  personalExpenses: PersonalExpense[];
+  lifeGoals: LifeGoal[];
+  dynamicTarget: DynamicTarget;
   addClient: (c: Omit<Client, 'id' | 'created_at' | 'stage_updated_at'>) => Promise<void>;
   updateClient: (id: string, patch: Partial<Client>) => Promise<void>;
   deleteClient: (id: string) => Promise<void>;
@@ -24,6 +28,12 @@ export interface CrmContextValue {
   addTransaction: (t: Omit<Transaction, 'id' | 'created_at' | 'payment_date' | 'status' | 'due_date'> & { payment_date?: string; total_amount?: number }) => Promise<void>;
   stopRecurringPayment: (transactionId: string) => Promise<void>;
   markTransactionPaid: (transactionId: string) => Promise<void>;
+  addPersonalExpense: (e: Omit<PersonalExpense, 'id' | 'created_at'>) => Promise<void>;
+  updatePersonalExpense: (id: string, patch: Partial<PersonalExpense>) => Promise<void>;
+  deletePersonalExpense: (id: string) => Promise<void>;
+  addLifeGoal: (g: Omit<LifeGoal, 'id' | 'created_at'>) => Promise<void>;
+  updateLifeGoal: (id: string, patch: Partial<LifeGoal>) => Promise<void>;
+  deleteLifeGoal: (id: string) => Promise<void>;
   setMonthlyTarget: (n: number) => void;
 }
 

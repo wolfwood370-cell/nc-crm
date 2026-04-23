@@ -5,7 +5,8 @@ import {
   Client, TAX_RATE, RoiMetric, LeadSource, PipelineStage,
   ChurnRisk, Gender, Transaction, PaymentType, PaymentMethod,
   Service, MonthlyBreakdown, HISTORY_START_YEAR, HISTORY_START_MONTH,
-  rentForMonth, rentYtd,
+  rentForMonth, rentYtd, FIXED_MONTHLY_COST,
+  PersonalExpense, LifeGoal, DynamicTarget,
 } from '@/types/crm';
 import { CrmContext, CrmContextValue } from './crmContext';
 
@@ -164,6 +165,50 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
         name: r.name,
         price: Number(r.price),
         sort_order: r.sort_order,
+        duration_months: Number(r.duration_months ?? 1),
+      }));
+    },
+  });
+
+  const { data: personalExpenses = [] } = useQuery({
+    queryKey: ['crm', 'personal_expenses'],
+    queryFn: async (): Promise<PersonalExpense[]> => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any)
+        .from('personal_expenses')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return (data as any[]).map((r) => ({
+        id: r.id,
+        name: r.name,
+        amount: Number(r.amount),
+        is_recurring: Boolean(r.is_recurring),
+        category: r.category,
+        created_at: r.created_at,
+      }));
+    },
+  });
+
+  const { data: lifeGoals = [] } = useQuery({
+    queryKey: ['crm', 'life_goals'],
+    queryFn: async (): Promise<LifeGoal[]> => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any)
+        .from('life_goals')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return (data as any[]).map((r) => ({
+        id: r.id,
+        title: r.title,
+        total_target_amount: Number(r.total_target_amount),
+        current_savings: Number(r.current_savings ?? 0),
+        deadline: r.deadline,
+        is_active: Boolean(r.is_active),
+        created_at: r.created_at,
       }));
     },
   });
@@ -176,11 +221,16 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
         queryClient.invalidateQueries({ queryKey: ['crm', 'clients'] });
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'roi_metrics' }, () => {
-        // ROI metrics sono lette insieme ai clients in fetchAll → invalida la query corretta
         queryClient.invalidateQueries({ queryKey: ['crm', 'clients'] });
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => {
         queryClient.invalidateQueries({ queryKey: ['crm', 'transactions'] });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'personal_expenses' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['crm', 'personal_expenses'] });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'life_goals' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['crm', 'life_goals'] });
       })
       .subscribe();
     return () => {
@@ -361,10 +411,107 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['crm', 'transactions'] }),
   });
 
+  // ---------- Personal Expenses CRUD ----------
+  const invalidateExpenses = () => queryClient.invalidateQueries({ queryKey: ['crm', 'personal_expenses'] });
+  const addExpenseMutation = useMutation({
+    mutationFn: async (e: Omit<PersonalExpense, 'id' | 'created_at'>) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any).from('personal_expenses').insert({
+        name: e.name, amount: e.amount, is_recurring: e.is_recurring, category: e.category,
+      });
+      if (error) throw error;
+    },
+    onSuccess: invalidateExpenses,
+  });
+  const updateExpenseMutation = useMutation({
+    mutationFn: async ({ id, patch }: { id: string; patch: Partial<PersonalExpense> }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any).from('personal_expenses').update(patch).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: invalidateExpenses,
+  });
+  const deleteExpenseMutation = useMutation({
+    mutationFn: async (id: string) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any).from('personal_expenses').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: invalidateExpenses,
+  });
+
+  // ---------- Life Goals CRUD ----------
+  const invalidateGoals = () => queryClient.invalidateQueries({ queryKey: ['crm', 'life_goals'] });
+  const addGoalMutation = useMutation({
+    mutationFn: async (g: Omit<LifeGoal, 'id' | 'created_at'>) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any).from('life_goals').insert({
+        title: g.title,
+        total_target_amount: g.total_target_amount,
+        current_savings: g.current_savings,
+        deadline: g.deadline,
+        is_active: g.is_active,
+      });
+      if (error) throw error;
+    },
+    onSuccess: invalidateGoals,
+  });
+  const updateGoalMutation = useMutation({
+    mutationFn: async ({ id, patch }: { id: string; patch: Partial<LifeGoal> }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any).from('life_goals').update(patch).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: invalidateGoals,
+  });
+  const deleteGoalMutation = useMutation({
+    mutationFn: async (id: string) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any).from('life_goals').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: invalidateGoals,
+  });
+
   const current_monthly_revenue = useMemo(
     () => clients.filter(c => c.pipeline_stage === 'Closed Won').reduce((s, c) => s + (c.monthly_value || 0), 0),
     [clients]
   );
+
+  // ---------- Dynamic Target ----------
+  const dynamicTarget = useMemo<DynamicTarget>(() => {
+    const totalRecurringExpenses = personalExpenses
+      .filter(e => e.is_recurring)
+      .reduce((s, e) => s + e.amount, 0);
+
+    const activeGoal = lifeGoals.find(g => g.is_active);
+    let monthlyGoalSaving = 0;
+    let monthsUntilDeadline = 0;
+    if (activeGoal) {
+      const now = new Date();
+      const deadline = new Date(activeGoal.deadline);
+      const diffMs = deadline.getTime() - now.getTime();
+      monthsUntilDeadline = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24 * 30.44)));
+      const remaining = Math.max(0, activeGoal.total_target_amount - activeGoal.current_savings);
+      monthlyGoalSaving = remaining / monthsUntilDeadline;
+    }
+
+    const totalNetNeeded = totalRecurringExpenses + monthlyGoalSaving;
+    const dynamicGrossTarget = (totalNetNeeded + FIXED_MONTHLY_COST) / (1 - TAX_RATE);
+
+    return {
+      totalRecurringExpenses,
+      monthlyGoalSaving,
+      totalNetNeeded,
+      dynamicGrossTarget,
+      monthsUntilDeadline,
+    };
+  }, [personalExpenses, lifeGoals]);
+
+  // Il target mensile della Dashboard segue il target dinamico se >0, altrimenti fallback manuale
+  const effectiveMonthlyTarget = dynamicTarget.dynamicGrossTarget > 0
+    ? dynamicTarget.dynamicGrossTarget
+    : monthlyTarget;
 
   const financialSummary = useMemo(() => {
     const now = new Date();
@@ -402,10 +549,10 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
       gross_ytd,
       net_ytd,
       fixed_monthly_cost: rentCurrentMonth,
-      monthly_target: monthlyTarget,
+      monthly_target: effectiveMonthlyTarget,
       current_month_number: monthNum,
     };
-  }, [transactions, monthlyTarget]);
+  }, [transactions, effectiveMonthlyTarget]);
 
   // Storico mensile a partire da Gennaio 2026 fino al mese corrente
   const monthlyBreakdown = useMemo<MonthlyBreakdown[]>(() => {
@@ -447,12 +594,15 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
     financials: {
       fixed_monthly_cost: financialSummary.fixed_monthly_cost,
       current_monthly_revenue,
-      monthly_target: monthlyTarget,
+      monthly_target: effectiveMonthlyTarget,
     },
     financialSummary,
     monthlyBreakdown,
     services,
     transactions,
+    personalExpenses,
+    lifeGoals,
+    dynamicTarget,
     addClient: async (c) => { await addMutation.mutateAsync(c); },
     updateClient: async (id, patch) => { await updateMutation.mutateAsync({ id, patch }); },
     deleteClient: async (id) => { await deleteMutation.mutateAsync(id); },
@@ -462,6 +612,12 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
     addTransaction: async (t) => { await addTransactionMutation.mutateAsync(t); },
     stopRecurringPayment: async (transactionId) => { await stopRecurringMutation.mutateAsync(transactionId); },
     markTransactionPaid: async (transactionId) => { await markPaidMutation.mutateAsync(transactionId); },
+    addPersonalExpense: async (e) => { await addExpenseMutation.mutateAsync(e); },
+    updatePersonalExpense: async (id, patch) => { await updateExpenseMutation.mutateAsync({ id, patch }); },
+    deletePersonalExpense: async (id) => { await deleteExpenseMutation.mutateAsync(id); },
+    addLifeGoal: async (g) => { await addGoalMutation.mutateAsync(g); },
+    updateLifeGoal: async (id, patch) => { await updateGoalMutation.mutateAsync({ id, patch }); },
+    deleteLifeGoal: async (id) => { await deleteGoalMutation.mutateAsync(id); },
     setMonthlyTarget,
   };
 
