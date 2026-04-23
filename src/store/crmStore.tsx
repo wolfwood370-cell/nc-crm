@@ -103,6 +103,8 @@ type TransactionRow = {
   installments_count: number;
   payment_date: string;
   created_at: string;
+  recurring_active?: boolean | null;
+  recurring_stopped_at?: string | null;
 };
 
 const fetchTransactions = async (): Promise<Transaction[]> => {
@@ -121,6 +123,8 @@ const fetchTransactions = async (): Promise<Transaction[]> => {
     installments_count: r.installments_count,
     payment_date: r.payment_date,
     created_at: r.created_at,
+    recurring_active: r.recurring_active ?? false,
+    recurring_stopped_at: r.recurring_stopped_at ?? undefined,
   }));
 };
 
@@ -163,6 +167,8 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
     mutationFn: async (c: Omit<Client, 'id' | 'created_at' | 'stage_updated_at'>) => {
       const { error } = await supabase.from('clients').insert({
         name: c.name,
+        first_name: c.first_name ?? null,
+        last_name: c.last_name ?? null,
         lead_source: c.lead_source,
         pipeline_stage: c.pipeline_stage,
         root_motivator: c.root_motivator ?? '',
@@ -181,6 +187,21 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
       if (error) throw error;
     },
     onSuccess: invalidate,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      // Remove dependent rows first (no FK cascade configured)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any).from('transactions').delete().eq('client_id', id);
+      await supabase.from('roi_metrics').delete().eq('client_id', id);
+      const { error } = await supabase.from('clients').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crm', 'clients'] });
+      queryClient.invalidateQueries({ queryKey: ['crm', 'transactions'] });
+    },
   });
 
   const updateMutation = useMutation({
@@ -243,7 +264,20 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
         payment_method: t.payment_method ?? 'Stripe',
         installments_count: t.installments_count,
         payment_date: t.payment_date ?? new Date().toISOString(),
+        recurring_active: t.payment_type === 'Ricorrente',
       });
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['crm', 'transactions'] }),
+  });
+
+  const stopRecurringMutation = useMutation({
+    mutationFn: async (transactionId: string) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any)
+        .from('transactions')
+        .update({ recurring_active: false, recurring_stopped_at: new Date().toISOString() })
+        .eq('id', transactionId);
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['crm', 'transactions'] }),
@@ -295,10 +329,12 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
     transactions,
     addClient: async (c) => { await addMutation.mutateAsync(c); },
     updateClient: async (id, patch) => { await updateMutation.mutateAsync({ id, patch }); },
+    deleteClient: async (id) => { await deleteMutation.mutateAsync(id); },
     moveClient: async (id, stage) => { await moveMutation.mutateAsync({ id, stage }); },
     addRoiMetric: async (clientId, metric) => { await addRoiMutation.mutateAsync({ clientId, metric }); },
     removeRoiMetric: async (clientId, metricId) => { await removeRoiMutation.mutateAsync({ clientId, metricId }); },
     addTransaction: async (t) => { await addTransactionMutation.mutateAsync(t); },
+    stopRecurringPayment: async (transactionId) => { await stopRecurringMutation.mutateAsync(transactionId); },
     setMonthlyTarget,
   };
 

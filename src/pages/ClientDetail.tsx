@@ -2,7 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useCrm, daysSince } from '@/store/useCrm';
 import {
   ChevronLeft, Heart, Shield, Eye, Phone, Euro, CalendarClock,
-  Sparkles, Activity, Plus, Trash2, MessageSquare, AlertTriangle, TrendingUp, Receipt, Loader2, CreditCard,
+  Sparkles, Activity, Plus, Trash2, MessageSquare, AlertTriangle, TrendingUp, Receipt, Loader2, CreditCard, Repeat, Ban,
 } from 'lucide-react';
 import { SourceBadge } from '@/components/crm/SourceBadge';
 import { ChurnBadge, LeadScoreBadge } from '@/components/crm/ScoreBadges';
@@ -25,6 +25,10 @@ import {
 } from '@/types/crm';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { ShieldCheck } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
@@ -34,7 +38,7 @@ const todayIso = () => new Date().toISOString().slice(0, 10);
 const ClientDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { clients, updateClient, moveClient, addRoiMetric, removeRoiMetric, isLoading, transactions, addTransaction } = useCrm();
+  const { clients, updateClient, deleteClient, moveClient, addRoiMetric, removeRoiMetric, isLoading, transactions, addTransaction, stopRecurringPayment } = useCrm();
   const client = clients.find(c => c.id === id);
 
   // Inline payment form state
@@ -162,7 +166,9 @@ const ClientDetail = () => {
       toast.success(
         payType === 'A Rate'
           ? `Registrato: ${payInstallments} rate da ${formatEuro(perInstallment)} (${payMethod})`
-          : `Pagamento di ${formatEuro(value)} registrato (${payMethod})`
+          : payType === 'Ricorrente'
+            ? `Pagamento ricorrente di ${formatEuro(value)} attivato (ogni 28 giorni)`
+            : `Pagamento di ${formatEuro(value)} registrato (${payMethod})`
       );
       setPayAmount('');
       setPayType('Unica Soluzione');
@@ -172,6 +178,25 @@ const ClientDetail = () => {
       toast.error('Errore nel salvataggio del pagamento');
     } finally {
       setPaySubmitting(false);
+    }
+  };
+
+  const handleDeleteClient = async () => {
+    try {
+      await deleteClient(client!.id);
+      toast.success('Cliente eliminato');
+      navigate('/clients');
+    } catch {
+      toast.error("Errore durante l'eliminazione");
+    }
+  };
+
+  const handleStopRecurring = async (transactionId: string) => {
+    try {
+      await stopRecurringPayment(transactionId);
+      toast.success('Pagamento ricorrente interrotto');
+    } catch {
+      toast.error("Errore nell'interruzione del pagamento");
     }
   };
 
@@ -454,19 +479,25 @@ const ClientDetail = () => {
                       type="single"
                       value={payType}
                       onValueChange={(v) => v && setPayType(v as PaymentType)}
-                      className="w-full grid grid-cols-2 gap-2"
+                      className="w-full grid grid-cols-3 gap-2"
                     >
                       <ToggleGroupItem
                         value="Unica Soluzione"
-                        className="h-12 rounded-xl border border-border data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:border-primary text-xs font-semibold"
+                        className="h-12 rounded-xl border border-border data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:border-primary text-[11px] font-semibold"
                       >
-                        Unica Soluzione
+                        Unica
                       </ToggleGroupItem>
                       <ToggleGroupItem
                         value="A Rate"
-                        className="h-12 rounded-xl border border-border data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:border-primary text-xs font-semibold"
+                        className="h-12 rounded-xl border border-border data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:border-primary text-[11px] font-semibold"
                       >
                         A Rate
+                      </ToggleGroupItem>
+                      <ToggleGroupItem
+                        value="Ricorrente"
+                        className="h-12 rounded-xl border border-border data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:border-primary text-[11px] font-semibold"
+                      >
+                        <Repeat className="h-3 w-3 mr-1" /> Ricorrente
                       </ToggleGroupItem>
                     </ToggleGroup>
                     {payType === 'A Rate' && (
@@ -480,6 +511,11 @@ const ClientDetail = () => {
                           ))}
                         </SelectContent>
                       </Select>
+                    )}
+                    {payType === 'Ricorrente' && (
+                      <p className="text-[11px] text-muted-foreground mt-1.5 flex items-center gap-1.5">
+                        <Repeat className="h-3 w-3" /> Si ripete automaticamente ogni 28 giorni dal primo pagamento.
+                      </p>
                     )}
                   </div>
 
@@ -528,27 +564,43 @@ const ClientDetail = () => {
                   {clientTransactions.length > 0 && (
                     <div className="space-y-2 pt-2">
                       <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Ultime transazioni</p>
-                      {clientTransactions.slice(0, 3).map(t => (
-                        <div key={t.id} className="flex items-center gap-3 rounded-xl border border-border bg-secondary/40 p-2.5">
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                            <Euro className="h-3.5 w-3.5" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-baseline justify-between gap-2">
-                              <p className="font-semibold text-xs text-foreground truncate">
-                                {t.payment_type === 'A Rate'
-                                  ? `${t.installments_count}× ${formatEuro(t.amount / t.installments_count)}`
-                                  : 'Unica Soluzione'}
-                                <span className="ml-1.5 text-[10px] font-normal text-muted-foreground">· {t.payment_method}</span>
-                              </p>
-                              <p className="font-bold text-xs text-primary shrink-0">{formatEuro(t.amount)}</p>
+                      {clientTransactions.slice(0, 3).map(t => {
+                        const isRecurring = t.payment_type === 'Ricorrente';
+                        const isStopped = isRecurring && !t.recurring_active;
+                        return (
+                          <div key={t.id} className="flex items-center gap-3 rounded-xl border border-border bg-secondary/40 p-2.5">
+                            <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${isRecurring ? 'bg-accent/15 text-accent' : 'bg-primary/10 text-primary'}`}>
+                              {isRecurring ? <Repeat className="h-3.5 w-3.5" /> : <Euro className="h-3.5 w-3.5" />}
                             </div>
-                            <p className="text-[10px] text-muted-foreground">
-                              {new Date(t.payment_date).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })}
-                            </p>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-baseline justify-between gap-2">
+                                <p className="font-semibold text-xs text-foreground truncate">
+                                  {t.payment_type === 'A Rate'
+                                    ? `${t.installments_count}× ${formatEuro(t.amount / t.installments_count)}`
+                                    : isRecurring
+                                      ? `Ricorrente${isStopped ? ' (interrotto)' : ' · ogni 28g'}`
+                                      : 'Unica Soluzione'}
+                                  <span className="ml-1.5 text-[10px] font-normal text-muted-foreground">· {t.payment_method}</span>
+                                </p>
+                                <p className="font-bold text-xs text-primary shrink-0">{formatEuro(t.amount)}</p>
+                              </div>
+                              <p className="text-[10px] text-muted-foreground">
+                                {new Date(t.payment_date).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })}
+                              </p>
+                            </div>
+                            {isRecurring && !isStopped && (
+                              <button
+                                type="button"
+                                onClick={() => handleStopRecurring(t.id)}
+                                className="flex h-8 shrink-0 items-center gap-1 rounded-lg bg-destructive/10 px-2 text-[10px] font-bold uppercase tracking-wider text-destructive hover:bg-destructive/20 transition-smooth"
+                                aria-label="Interrompi pagamento ricorrente"
+                              >
+                                <Ban className="h-3 w-3" /> Interrompi
+                              </button>
+                            )}
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                       {clientTransactions.length > 3 && (
                         <p className="text-[10px] text-muted-foreground text-center">
                           +{clientTransactions.length - 3} altre transazioni
@@ -779,6 +831,35 @@ const ClientDetail = () => {
         >
           Salva Modifiche
         </Button>
+
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full h-12 rounded-xl text-sm font-semibold border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+            >
+              <Trash2 className="h-4 w-4 mr-1.5" /> Elimina cliente
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent className="rounded-2xl">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Eliminare {client.name}?</AlertDialogTitle>
+              <AlertDialogDescription>
+                L'operazione è irreversibile. Verranno cancellati anche pagamenti, metriche ROI e dati anagrafici associati.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="rounded-xl">Annulla</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteClient}
+                className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Elimina definitivamente
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );
