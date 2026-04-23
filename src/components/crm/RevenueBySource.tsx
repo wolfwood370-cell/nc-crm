@@ -1,16 +1,33 @@
+import { useMemo } from 'react';
 import { useCrm } from '@/store/useCrm';
-import { LEAD_SOURCES, formatEuro, leadSourceLabel, sourceColorMap } from '@/types/crm';
+import { LEAD_SOURCES, LeadSource, formatEuro, leadSourceLabel, sourceColorMap } from '@/types/crm';
 import { PrivacyMask } from './PrivacyMask';
 
 export const RevenueBySource = () => {
-  const { clients } = useCrm();
+  const { clients, transactions } = useCrm();
 
-  const totals = LEAD_SOURCES.map(src => {
-    const value = clients
-      .filter(c => c.pipeline_stage === 'Closed Won' && c.lead_source === src)
-      .reduce((s, c) => s + (c.monthly_value || 0), 0);
-    return { source: src, value };
-  });
+  const totals = useMemo(() => {
+    // Mappa client_id → lead_source per join veloce
+    const clientSource = new Map<string, LeadSource>();
+    clients.forEach(c => clientSource.set(c.id, c.lead_source));
+
+    const acc: Record<LeadSource, number> = {
+      'Gym-provided': 0,
+      'PT Pack 99€': 0,
+      'Gym Floor': 0,
+      'Referral': 0,
+      'Social Media': 0,
+    };
+
+    for (const t of transactions) {
+      if (t.status !== 'Saldato') continue;
+      const src = clientSource.get(t.client_id);
+      if (!src) continue;
+      acc[src] += t.amount;
+    }
+
+    return LEAD_SOURCES.map(src => ({ source: src, value: acc[src] }));
+  }, [clients, transactions]);
 
   const max = Math.max(1, ...totals.map(t => t.value));
   const grandTotal = totals.reduce((s, t) => s + t.value, 0);
@@ -20,7 +37,7 @@ export const RevenueBySource = () => {
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Valore per Fonte</p>
-          <p className="text-[11px] text-muted-foreground">Ricavi mensili da clienti attivi</p>
+          <p className="text-[11px] text-muted-foreground">Incassi reali per canale di acquisizione</p>
         </div>
         <p className="text-sm font-bold text-foreground"><PrivacyMask>{formatEuro(grandTotal)}</PrivacyMask></p>
       </div>
@@ -28,7 +45,7 @@ export const RevenueBySource = () => {
       {grandTotal === 0 ? (
         <div className="mt-4 rounded-xl border border-dashed border-border p-6 text-center">
           <p className="text-xs text-muted-foreground">
-            Nessun ricavo attivo. Chiudi il primo cliente per popolare il grafico.
+            Nessun incasso registrato. Registra il primo pagamento per popolare il grafico.
           </p>
         </div>
       ) : (
