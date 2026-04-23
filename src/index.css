@@ -2,95 +2,67 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
-
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Dark gym CRM theme — slate + emerald */
+    --background: 222 30% 7%;
+    --foreground: 210 30% 96%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 222 25% 11%;
+    --card-foreground: 210 30% 96%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 222 28% 9%;
+    --popover-foreground: 210 30% 96%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 152 76% 44%;
+    --primary-foreground: 222 47% 6%;
+    --primary-glow: 152 85% 55%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 222 20% 16%;
+    --secondary-foreground: 210 30% 96%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 222 18% 14%;
+    --muted-foreground: 215 16% 62%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 152 60% 22%;
+    --accent-foreground: 152 90% 80%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --warning: 38 92% 55%;
+    --warning-foreground: 222 47% 6%;
 
-    --radius: 0.5rem;
+    --border: 222 20% 18%;
+    --input: 222 20% 16%;
+    --ring: 152 76% 44%;
 
-    --sidebar-background: 0 0% 98%;
+    --radius: 1rem;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
+    /* Lead source colors */
+    --source-gym: 199 89% 55%;
+    --source-pack: 152 76% 44%;
+    --source-floor: 38 92% 55%;
+    --source-referral: 280 70% 60%;
+    --source-social: 330 75% 60%;
 
-    --sidebar-primary: 240 5.9% 10%;
+    /* Pipeline stage colors */
+    --stage-lead: 215 20% 55%;
+    --stage-nurture: 199 89% 55%;
+    --stage-trial: 38 92% 55%;
+    --stage-pitch: 280 70% 60%;
+    --stage-won: 152 76% 44%;
+    --stage-lost: 0 72% 55%;
 
-    --sidebar-primary-foreground: 0 0% 98%;
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+    --gradient-card: linear-gradient(180deg, hsl(222 25% 13%), hsl(222 25% 10%));
+    --gradient-emerald-glow: radial-gradient(circle at top, hsl(152 76% 44% / 0.18), transparent 60%);
 
-    --sidebar-accent: 240 4.8% 95.9%;
+    --shadow-glow: 0 10px 40px -10px hsl(var(--primary) / 0.45);
+    --shadow-card: 0 4px 20px -4px hsl(222 80% 2% / 0.5);
+    --shadow-fab: 0 12px 30px -6px hsl(var(--primary) / 0.6);
 
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   }
 }
 
@@ -98,8 +70,25 @@ All colors MUST be HSL.
   * {
     @apply border-border;
   }
-
-  body {
-    @apply bg-background text-foreground;
+  html, body, #root {
+    @apply h-full;
   }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "cv11", "ss01";
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+@layer utilities {
+  .gradient-primary { background: var(--gradient-primary); }
+  .gradient-card { background: var(--gradient-card); }
+  .gradient-emerald-glow { background: var(--gradient-emerald-glow); }
+  .shadow-glow { box-shadow: var(--shadow-glow); }
+  .shadow-card { box-shadow: var(--shadow-card); }
+  .shadow-fab { box-shadow: var(--shadow-fab); }
+  .transition-smooth { transition: var(--transition-smooth); }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+  .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
 }
