@@ -99,6 +99,7 @@ type TransactionRow = {
   client_id: string;
   amount: number | string;
   payment_type: string;
+  payment_method?: string | null;
   installments_count: number;
   payment_date: string;
   created_at: string;
@@ -116,6 +117,7 @@ const fetchTransactions = async (): Promise<Transaction[]> => {
     client_id: r.client_id,
     amount: Number(r.amount),
     payment_type: r.payment_type as PaymentType,
+    payment_method: ((r.payment_method as PaymentMethod) ?? 'Stripe'),
     installments_count: r.installments_count,
     payment_date: r.payment_date,
     created_at: r.created_at,
