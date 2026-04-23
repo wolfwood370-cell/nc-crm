@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, ReactNode } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Client, FIXED_MONTHLY_COST, RoiMetric, LeadSource, PipelineStage, ChurnRisk } from '@/types/crm';
+import { Client, FIXED_MONTHLY_COST, RoiMetric, LeadSource, PipelineStage, ChurnRisk, Gender } from '@/types/crm';
 import { CrmContext, CrmContextValue } from './crmContext';
 
 // Re-export for back-compat with existing imports
@@ -23,6 +23,10 @@ type ClientRow = {
   churn_risk: string | null;
   notes: string | null;
   phone: string | null;
+  birth_date: string | null;
+  gender: string | null;
+  gym_signup_date: string | null;
+  gym_expiry_date: string | null;
   created_at: string;
   stage_updated_at: string;
 };
@@ -54,6 +58,10 @@ const mapClient = (row: ClientRow, metrics: RoiRow[]): Client => ({
   churn_risk: (row.churn_risk as ChurnRisk) ?? undefined,
   notes: row.notes ?? undefined,
   phone: row.phone ?? undefined,
+  birth_date: row.birth_date ?? undefined,
+  gender: (row.gender as Gender) ?? undefined,
+  gym_signup_date: row.gym_signup_date ?? undefined,
+  gym_expiry_date: row.gym_expiry_date ?? undefined,
   roi_metrics: metrics
     .filter(m => m.client_id === row.id)
     .map(m => ({

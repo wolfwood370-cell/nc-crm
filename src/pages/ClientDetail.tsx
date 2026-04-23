@@ -16,6 +16,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   PIPELINE_STAGES, PipelineStage, stageColorMap, pipelineStageLabel,
   CHURN_RISKS, ChurnRisk, RoiMetric,
+  LEAD_SOURCES, LeadSource, leadSourceLabel,
+  GENDERS, Gender, genderLabel,
 } from '@/types/crm';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
@@ -35,6 +37,10 @@ const ClientDetail = () => {
   const [lastContact, setLastContact] = useState('');
   const [score, setScore] = useState<number>(50);
   const [churn, setChurn] = useState<ChurnRisk>('Basso');
+  const [birthDate, setBirthDate] = useState('');
+  const [gender, setGender] = useState<Gender | ''>('');
+  const [gymSignup, setGymSignup] = useState('');
+  const [gymExpiry, setGymExpiry] = useState('');
 
   // ROI metric form
   const [metricName, setMetricName] = useState('');
@@ -51,6 +57,10 @@ const ClientDetail = () => {
       setLastContact(client.last_contacted_at ? client.last_contacted_at.slice(0, 10) : '');
       setScore(client.lead_score ?? 50);
       setChurn(client.churn_risk ?? 'Basso');
+      setBirthDate(client.birth_date ? client.birth_date.slice(0, 10) : '');
+      setGender(client.gender ?? '');
+      setGymSignup(client.gym_signup_date ? client.gym_signup_date.slice(0, 10) : '');
+      setGymExpiry(client.gym_expiry_date ? client.gym_expiry_date.slice(0, 10) : '');
     }
   }, [client]);
 
@@ -77,8 +87,17 @@ const ClientDetail = () => {
       last_contacted_at: lastContact ? new Date(lastContact).toISOString() : undefined,
       lead_score: score,
       churn_risk: churn,
+      birth_date: birthDate || undefined,
+      gender: (gender || undefined) as Gender | undefined,
+      gym_signup_date: gymSignup || undefined,
+      gym_expiry_date: gymExpiry || undefined,
     });
     toast.success('Profilo aggiornato');
+  };
+
+  const handleSourceChange = (s: LeadSource) => {
+    updateClient(client!.id, { lead_source: s });
+    toast.success(`Fonte aggiornata: ${leadSourceLabel[s]}`);
   };
 
   const handleStageChange = (s: PipelineStage) => {
@@ -161,20 +180,33 @@ const ClientDetail = () => {
           </div>
         </div>
 
-        {/* Stage selector */}
-        <section>
-          <label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Fase pipeline</label>
-          <Select value={client.pipeline_stage} onValueChange={(v) => handleStageChange(v as PipelineStage)}>
-            <SelectTrigger className="mt-2 h-14 rounded-xl border border-border bg-card text-base font-semibold">
-              <div className="flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: `hsl(var(--${stageColor}))` }} />
-                <SelectValue>{pipelineStageLabel[client.pipeline_stage]}</SelectValue>
-              </div>
-            </SelectTrigger>
-            <SelectContent>
-              {PIPELINE_STAGES.map(s => <SelectItem key={s} value={s}>{pipelineStageLabel[s]}</SelectItem>)}
-            </SelectContent>
-          </Select>
+        {/* Stage + Source selectors */}
+        <section className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Fase pipeline</label>
+            <Select value={client.pipeline_stage} onValueChange={(v) => handleStageChange(v as PipelineStage)}>
+              <SelectTrigger className="mt-2 h-14 rounded-xl border border-border bg-card text-base font-semibold">
+                <div className="flex items-center gap-2">
+                  <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: `hsl(var(--${stageColor}))` }} />
+                  <SelectValue>{pipelineStageLabel[client.pipeline_stage]}</SelectValue>
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                {PIPELINE_STAGES.map(s => <SelectItem key={s} value={s}>{pipelineStageLabel[s]}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Fonte contatto</label>
+            <Select value={client.lead_source} onValueChange={(v) => handleSourceChange(v as LeadSource)}>
+              <SelectTrigger className="mt-2 h-14 rounded-xl border border-border bg-card text-base font-semibold">
+                <SelectValue>{leadSourceLabel[client.lead_source]}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {LEAD_SOURCES.map(s => <SelectItem key={s} value={s}>{leadSourceLabel[s]}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
         </section>
 
         {/* Tabs */}
@@ -334,6 +366,51 @@ const ClientDetail = () => {
                   <p className="text-[11px] text-muted-foreground">
                     Usato dal motore di automazione per i follow-up a 1, 3, 7 giorni.
                   </p>
+                </div>
+              </div>
+            </section>
+
+            {/* Anagrafica & Iscrizione palestra */}
+            <section className="rounded-2xl border border-border bg-card p-4 space-y-4 shadow-card">
+              <h3 className="font-bold text-sm text-foreground">Anagrafica & Iscrizione</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Data di nascita</label>
+                  <Input
+                    type="date"
+                    value={birthDate}
+                    onChange={(e) => setBirthDate(e.target.value)}
+                    className="h-12 rounded-xl bg-secondary border-0 text-base"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Sesso</label>
+                  <Select value={gender || undefined} onValueChange={(v) => setGender(v as Gender)}>
+                    <SelectTrigger className="h-12 rounded-xl bg-secondary border-0 text-base font-semibold">
+                      <SelectValue placeholder="Seleziona…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {GENDERS.map(g => <SelectItem key={g} value={g}>{genderLabel[g]}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Iscrizione palestra</label>
+                  <Input
+                    type="date"
+                    value={gymSignup}
+                    onChange={(e) => setGymSignup(e.target.value)}
+                    className="h-12 rounded-xl bg-secondary border-0 text-base"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Scadenza abbonamento</label>
+                  <Input
+                    type="date"
+                    value={gymExpiry}
+                    onChange={(e) => setGymExpiry(e.target.value)}
+                    className="h-12 rounded-xl bg-secondary border-0 text-base"
+                  />
                 </div>
               </div>
             </section>
