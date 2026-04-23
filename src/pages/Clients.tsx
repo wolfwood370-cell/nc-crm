@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useCrm } from '@/store/useCrm';
 import { ClientCard } from '@/components/crm/ClientCard';
 import { Input } from '@/components/ui/input';
