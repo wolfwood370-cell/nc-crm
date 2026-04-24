@@ -81,6 +81,8 @@ const FinancialOS = () => {
     expenseCategories, addExpenseCategory, updateExpenseCategory, deleteExpenseCategory,
     personalIncomes, addPersonalIncome, updatePersonalIncome, deletePersonalIncome,
     businessExpenses, addBusinessExpense, updateBusinessExpense, deleteBusinessExpense, endBusinessExpense,
+    businessExpenseCategories, addBusinessExpenseCategory, updateBusinessExpenseCategory, deleteBusinessExpenseCategory,
+    incomeCategories: incomeCategoriesCustom, addIncomeCategory, updateIncomeCategory, deleteIncomeCategory,
   } = useCrm();
 
   const [expenseOpen, setExpenseOpen] = useState(false);
@@ -89,12 +91,15 @@ const FinancialOS = () => {
   const [goalOpen, setGoalOpen] = useState(false);
   const [goalForm, setGoalForm] = useState<GoalFormState>(emptyGoal());
   const [manageCategoriesOpen, setManageCategoriesOpen] = useState(false);
+  const [manageTab, setManageTab] = useState<'personal' | 'business' | 'income'>('personal');
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [editingCategoryName, setEditingCategoryName] = useState('');
   const [incomeOpen, setIncomeOpen] = useState(false);
   const [incomeForm, setIncomeForm] = useState<IncomeFormState>(emptyIncome());
+  const [newIncomeCategoryName, setNewIncomeCategoryName] = useState('');
   const [bizOpen, setBizOpen] = useState(false);
   const [bizForm, setBizForm] = useState<BizExpenseFormState>(emptyBizExpense());
+  const [newBizCategoryName, setNewBizCategoryName] = useState('');
 
   // Unione categorie standard + custom (deduplicate case-insensitive)
   const allCategoryNames = useMemo(() => {
