@@ -1031,6 +1031,7 @@ const FinancialOS = () => {
         <DialogContent className="rounded-2xl">
           <DialogHeader>
             <DialogTitle>{bizForm.id ? 'Modifica spesa aziendale' : 'Nuova spesa aziendale'}</DialogTitle>
+            <DialogDescription>Costi della tua attività (affitto studio, software, marketing). Sottratti dal lordo prima dell'utile.</DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <div>
