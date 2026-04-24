@@ -208,7 +208,8 @@ export interface LifeGoal {
 export interface DynamicTarget {
   monthlyGoalSaving: number;       // risparmio mensile per coprire l'obiettivo attivo
   totalRecurringExpenses: number;  // somma spese personali ricorrenti
-  totalNetNeeded: number;          // recurring + monthlyGoalSaving
+  totalRecurringBusinessExpenses: number; // somma spese aziendali ricorrenti
+  totalNetNeeded: number;          // recurring (personali + business) + monthlyGoalSaving
   dynamicGrossTarget: number;      // totalNetNeeded / (1 - 0.249)
   monthsUntilDeadline: number;     // mesi residui all'obiettivo (>=1)
 }
