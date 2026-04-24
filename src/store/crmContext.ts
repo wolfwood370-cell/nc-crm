@@ -45,6 +45,11 @@ export interface CrmContextValue {
   addPersonalIncome: (i: Omit<PersonalIncome, 'id' | 'created_at'>) => Promise<void>;
   updatePersonalIncome: (id: string, patch: Partial<PersonalIncome>) => Promise<void>;
   deletePersonalIncome: (id: string) => Promise<void>;
+  businessExpenses: BusinessExpense[];
+  addBusinessExpense: (e: Omit<BusinessExpense, 'id' | 'created_at'>) => Promise<void>;
+  updateBusinessExpense: (id: string, patch: Partial<BusinessExpense>) => Promise<void>;
+  deleteBusinessExpense: (id: string) => Promise<void>;
+  endBusinessExpense: (id: string) => Promise<void>;
   setMonthlyTarget: (n: number) => void;
 }
 
