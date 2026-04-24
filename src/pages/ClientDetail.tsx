@@ -85,6 +85,12 @@ const ClientDetail = () => {
   const [lastName, setLastName] = useState('');
   const [gdprConsent, setGdprConsent] = useState(false);
 
+  // Lead score behavior checklist (objective scoring)
+  const [behaviorResponsive, setBehaviorResponsive] = useState(false);
+  const [behaviorBookedSession, setBehaviorBookedSession] = useState(false);
+  const [behaviorNoMoneyObjection, setBehaviorNoMoneyObjection] = useState(false);
+  const [behaviorUrgency, setBehaviorUrgency] = useState(false);
+
   // ROI metric form
   const [metricName, setMetricName] = useState('');
   const [metricValue, setMetricValue] = useState('');
