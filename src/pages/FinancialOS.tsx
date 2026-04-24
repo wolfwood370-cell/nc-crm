@@ -78,13 +78,14 @@ const FinancialOS = () => {
     ? Math.min(100, (activeGoal.current_savings / Math.max(1, activeGoal.total_target_amount)) * 100)
     : 0;
 
-  const openNewExpense = () => { setExpenseForm(emptyExpense()); setExpenseOpen(true); };
+  const openNewExpense = () => { setExpenseForm(emptyExpense()); setNewCategoryName(''); setExpenseOpen(true); };
   const openEditExpense = (e: PersonalExpense) => {
     setExpenseForm({
       id: e.id, name: e.name, amount: String(e.amount),
       is_recurring: e.is_recurring, category: e.category,
       start_date: e.start_date ? e.start_date.slice(0, 10) : todayIso(),
     });
+    setNewCategoryName('');
     setExpenseOpen(true);
   };
   const submitExpense = async () => {
@@ -97,6 +98,23 @@ const FinancialOS = () => {
       toast.error(expenseForm.is_recurring ? 'Seleziona il mese di inizio' : 'Seleziona la data della spesa');
       return;
     }
+
+    // Risoluzione categoria: se "Altro..." selezionato, usa il nome libero
+    let finalCategory = expenseForm.category;
+    if (expenseForm.category === NEW_CATEGORY_SENTINEL) {
+      const trimmed = newCategoryName.trim();
+      if (!trimmed) {
+        toast.error('Inserisci il nome della nuova categoria');
+        return;
+      }
+      finalCategory = trimmed;
+      // Crea la categoria se non esiste già (case-insensitive)
+      const exists = allCategoryNames.some(n => n.toLowerCase() === trimmed.toLowerCase());
+      if (!exists) {
+        try { await addExpenseCategory(trimmed); } catch { /* silent */ }
+      }
+    }
+
     const startIso = new Date(expenseForm.start_date + 'T00:00:00').toISOString();
     try {
       if (expenseForm.id) {
@@ -104,7 +122,7 @@ const FinancialOS = () => {
           name: expenseForm.name.trim(),
           amount,
           is_recurring: expenseForm.is_recurring,
-          category: expenseForm.category,
+          category: finalCategory,
           start_date: startIso,
         });
         toast.success('Spesa aggiornata');
@@ -113,7 +131,7 @@ const FinancialOS = () => {
           name: expenseForm.name.trim(),
           amount,
           is_recurring: expenseForm.is_recurring,
-          category: expenseForm.category,
+          category: finalCategory,
           start_date: startIso,
         });
         toast.success('Spesa aggiunta');
