@@ -643,7 +643,8 @@ const FinancialOS = () => {
           <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Come si calcola il target</h2>
         </div>
         <div className="space-y-1.5 text-xs text-muted-foreground font-mono">
-          <p>Spese ricorrenti: <PrivacyMask>{formatEuro(dynamicTarget.totalRecurringExpenses)}</PrivacyMask></p>
+          <p>Spese personali ricorrenti: <PrivacyMask>{formatEuro(dynamicTarget.totalRecurringExpenses)}</PrivacyMask></p>
+          <p>+ Spese aziendali ricorrenti: <PrivacyMask>{formatEuro(dynamicTarget.totalRecurringBusinessExpenses)}</PrivacyMask></p>
           <p>+ Risparmio obiettivo: <PrivacyMask>{formatEuro(dynamicTarget.monthlyGoalSaving)}</PrivacyMask></p>
           <p>= Netto necessario: <PrivacyMask>{formatEuro(dynamicTarget.totalNetNeeded)}</PrivacyMask></p>
           <p>÷ (1 − {Math.round(TAX_RATE * 100)}% tasse)</p>
