@@ -867,6 +867,22 @@ const ClientDetail = () => {
                                 <Ban className="h-3 w-3" /> Stop
                               </button>
                             )}
+                            <button
+                              type="button"
+                              onClick={() => openEditTx(t)}
+                              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground transition-smooth"
+                              aria-label="Modifica pagamento"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setDeletingTxId(t.id)}
+                              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 transition-smooth"
+                              aria-label="Elimina pagamento"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
                           </div>
                         );
                       })}
