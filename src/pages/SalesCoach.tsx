@@ -261,6 +261,12 @@ const SalesCoach = () => {
 
         {report && !generating && (
           <div className="space-y-3">
+            {reportDate && (
+              <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <Clock3 className="h-3 w-3" />
+                Ultimo report generato il {new Date(reportDate).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })} alle {new Date(reportDate).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
+              </div>
+            )}
             {/* Sintesi */}
             <div className="rounded-xl border border-primary/30 bg-primary/5 p-3">
               <p className="text-[10px] font-bold uppercase tracking-wider text-primary mb-1">Sintesi · {analyzedCount} casi</p>
