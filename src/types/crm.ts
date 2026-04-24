@@ -166,9 +166,12 @@ export interface PersonalIncome {
   id: string;
   name: string;
   amount: number;
-  date: string;          // ISO
+  date: string;          // ISO — start_date per le ricorrenti
   category: string;
   created_at: string;
+  recurrence_type: RecurrenceType;
+  recurrence_value?: number;
+  end_date?: string;
 }
 
 export const STANDARD_INCOME_CATEGORIES = [
