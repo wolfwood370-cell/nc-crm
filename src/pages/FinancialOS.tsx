@@ -111,6 +111,24 @@ const FinancialOS = () => {
     return Array.from(set.values());
   }, [expenseCategories]);
 
+  const allBizCategoryNames = useMemo(() => {
+    const set = new Map<string, string>();
+    STANDARD_BUSINESS_EXPENSE_CATEGORIES.forEach(c => set.set(c.toLowerCase(), c));
+    businessExpenseCategories.forEach(c => {
+      if (!set.has(c.name.toLowerCase())) set.set(c.name.toLowerCase(), c.name);
+    });
+    return Array.from(set.values());
+  }, [businessExpenseCategories]);
+
+  const allIncomeCategoryNames = useMemo(() => {
+    const set = new Map<string, string>();
+    STANDARD_INCOME_CATEGORIES.forEach(c => set.set(c.toLowerCase(), c));
+    incomeCategoriesCustom.forEach(c => {
+      if (!set.has(c.name.toLowerCase())) set.set(c.name.toLowerCase(), c.name);
+    });
+    return Array.from(set.values());
+  }, [incomeCategoriesCustom]);
+
   const activeGoal = useMemo(() => lifeGoals.find(g => g.is_active), [lifeGoals]);
   const goalProgress = activeGoal
     ? Math.min(100, (activeGoal.current_savings / Math.max(1, activeGoal.total_target_amount)) * 100)
