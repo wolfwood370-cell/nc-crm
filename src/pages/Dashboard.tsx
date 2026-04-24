@@ -2,6 +2,7 @@ import { BreakEvenGauge } from '@/components/crm/BreakEvenGauge';
 import { RevenueBySource } from '@/components/crm/RevenueBySource';
 import { FinancialWidget } from '@/components/crm/FinancialWidget';
 import { MonthlyHistory } from '@/components/crm/MonthlyHistory';
+import { SalesFunnel } from '@/components/crm/SalesFunnel';
 import { TaskQueue } from '@/components/crm/TaskQueue';
 import { useCrm } from '@/store/useCrm';
 import { FinancialCardSkeleton, TaskQueueSkeleton } from '@/components/crm/skeletons';
@@ -49,6 +50,7 @@ const Dashboard = () => {
 
           <MonthlyHistory />
 
+          <SalesFunnel />
 
           <div className="grid grid-cols-3 gap-3">
             <div className="rounded-2xl border border-border bg-card p-4 shadow-card">

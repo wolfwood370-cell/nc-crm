@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
 import { useCrm } from '@/store/useCrm';
 import {
-  formatEuro, TAX_RATE, PersonalExpense, LifeGoal, PersonalIncome,
-  STANDARD_EXPENSE_CATEGORIES, STANDARD_INCOME_CATEGORIES,
+  formatEuro, TAX_RATE, PersonalExpense, LifeGoal, PersonalIncome, BusinessExpense,
+  STANDARD_EXPENSE_CATEGORIES, STANDARD_INCOME_CATEGORIES, STANDARD_BUSINESS_EXPENSE_CATEGORIES,
 } from '@/types/crm';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,7 +14,7 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { Plus, Trash2, Pencil, Target, Wallet, TrendingUp, Sparkles, Ban, Settings2, Check, X, ArrowDownToLine } from 'lucide-react';
+import { Plus, Trash2, Pencil, Target, Wallet, TrendingUp, Sparkles, Ban, Settings2, Check, X, ArrowDownToLine, Briefcase } from 'lucide-react';
 import { PrivacyMask } from '@/components/crm/PrivacyMask';
 import { toast } from 'sonner';
 import { todayIso, dateInputToIso } from '@/lib/date';
@@ -60,6 +60,18 @@ const emptyIncome = (): IncomeFormState => ({
   name: '', amount: '', date: todayIso(), category: 'Altro',
 });
 
+interface BizExpenseFormState {
+  id?: string;
+  name: string;
+  amount: string;
+  is_recurring: boolean;
+  category: string;
+  start_date: string;
+}
+const emptyBizExpense = (): BizExpenseFormState => ({
+  name: '', amount: '', is_recurring: true, category: 'Software', start_date: todayIso(),
+});
+
 const FinancialOS = () => {
   const {
     personalExpenses, lifeGoals, dynamicTarget,
@@ -67,6 +79,7 @@ const FinancialOS = () => {
     addLifeGoal, updateLifeGoal, deleteLifeGoal,
     expenseCategories, addExpenseCategory, updateExpenseCategory, deleteExpenseCategory,
     personalIncomes, addPersonalIncome, updatePersonalIncome, deletePersonalIncome,
+    businessExpenses, addBusinessExpense, updateBusinessExpense, deleteBusinessExpense, endBusinessExpense,
   } = useCrm();
 
   const [expenseOpen, setExpenseOpen] = useState(false);
@@ -79,6 +92,8 @@ const FinancialOS = () => {
   const [editingCategoryName, setEditingCategoryName] = useState('');
   const [incomeOpen, setIncomeOpen] = useState(false);
   const [incomeForm, setIncomeForm] = useState<IncomeFormState>(emptyIncome());
+  const [bizOpen, setBizOpen] = useState(false);
+  const [bizForm, setBizForm] = useState<BizExpenseFormState>(emptyBizExpense());
 
   // Unione categorie standard + custom (deduplicate case-insensitive)
   const allCategoryNames = useMemo(() => {
@@ -263,6 +278,49 @@ const FinancialOS = () => {
     catch { toast.error('Errore durante l\'eliminazione'); }
   };
 
+  // ---------- Business Expenses ----------
+  const openNewBiz = () => { setBizForm(emptyBizExpense()); setBizOpen(true); };
+  const openEditBiz = (e: BusinessExpense) => {
+    setBizForm({
+      id: e.id, name: e.name, amount: String(e.amount),
+      is_recurring: e.is_recurring, category: e.category,
+      start_date: e.start_date ? e.start_date.slice(0, 10) : todayIso(),
+    });
+    setBizOpen(true);
+  };
+  const submitBiz = async () => {
+    const amount = Number(bizForm.amount.replace(',', '.'));
+    if (!bizForm.name.trim() || !Number.isFinite(amount) || amount < 0) {
+      toast.error('Inserisci nome e importo validi'); return;
+    }
+    if (!bizForm.start_date) { toast.error('Seleziona la data'); return; }
+    const startIso = dateInputToIso(bizForm.start_date) ?? new Date().toISOString();
+    try {
+      if (bizForm.id) {
+        await updateBusinessExpense(bizForm.id, {
+          name: bizForm.name.trim(), amount, is_recurring: bizForm.is_recurring,
+          category: bizForm.category, start_date: startIso,
+        });
+        toast.success('Spesa aziendale aggiornata');
+      } else {
+        await addBusinessExpense({
+          name: bizForm.name.trim(), amount, is_recurring: bizForm.is_recurring,
+          category: bizForm.category, start_date: startIso,
+        });
+        toast.success('Spesa aziendale aggiunta');
+      }
+      setBizOpen(false);
+    } catch { toast.error('Errore durante il salvataggio'); }
+  };
+  const handleDeleteBiz = async (id: string) => {
+    try { await deleteBusinessExpense(id); toast.success('Spesa eliminata'); }
+    catch { toast.error('Errore durante l\'eliminazione'); }
+  };
+  const handleEndBiz = async (id: string) => {
+    try { await endBusinessExpense(id); toast.success('Spesa ricorrente terminata'); }
+    catch { toast.error('Errore nell\'interruzione'); }
+  };
+
   return (
     <div className="px-4 md:px-0 pt-6 pb-24 md:pb-8 space-y-6 animate-fade-in">
 
@@ -289,11 +347,17 @@ const FinancialOS = () => {
             Per ottenere <PrivacyMask>{formatEuro(dynamicTarget.totalNetNeeded)}</PrivacyMask> netti dopo {Math.round(TAX_RATE * 100)}% di tasse.
           </p>
 
-          <div className="mt-5 grid grid-cols-2 gap-3">
+          <div className="mt-5 grid grid-cols-3 gap-3">
             <div className="rounded-xl bg-card/60 border border-border p-3">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Spese Ricorrenti</p>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Spese Personali</p>
               <p className="mt-1 text-lg font-bold text-foreground">
                 <PrivacyMask>{formatEuro(dynamicTarget.totalRecurringExpenses)}</PrivacyMask>
+              </p>
+            </div>
+            <div className="rounded-xl bg-card/60 border border-border p-3">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Spese Aziendali</p>
+              <p className="mt-1 text-lg font-bold text-foreground">
+                <PrivacyMask>{formatEuro(dynamicTarget.totalRecurringBusinessExpenses)}</PrivacyMask>
               </p>
             </div>
             <div className="rounded-xl bg-card/60 border border-border p-3">
@@ -378,6 +442,74 @@ const FinancialOS = () => {
               </div>
             ))}
           </div>
+        )}
+      </section>
+
+      {/* Business Expenses */}
+      <section className="rounded-3xl border border-border bg-card p-5 shadow-card">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Briefcase className="h-4 w-4" style={{ color: 'hsl(215 28% 45%)' }} />
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Spese Aziendali</h2>
+          </div>
+          <Button size="sm" variant="outline" onClick={openNewBiz} className="rounded-xl">
+            <Plus className="h-4 w-4 mr-1" />
+            Aggiungi
+          </Button>
+        </div>
+
+        <div className="mt-4 flex items-baseline justify-between">
+          <p className="text-xs text-muted-foreground">Totale ricorrenti / mese</p>
+          <p className="text-2xl font-bold" style={{ color: 'hsl(215 28% 35%)' }}>
+            <PrivacyMask>{formatEuro(dynamicTarget.totalRecurringBusinessExpenses)}</PrivacyMask>
+          </p>
+        </div>
+
+        {businessExpenses.length === 0 ? (
+          <p className="mt-4 text-sm text-muted-foreground">
+            Aggiungi i costi del business (affitto studio, marketing, software, attrezzatura...) per separare il vero utile aziendale dal tuo cash flow personale.
+          </p>
+        ) : (
+          <ul className="mt-4 divide-y divide-border">
+            {businessExpenses.map(e => {
+              const ended = !!e.end_date;
+              const startLabel = e.start_date
+                ? new Date(e.start_date).toLocaleDateString('it-IT', { month: 'short', year: 'numeric' })
+                : '—';
+              const endLabel = e.end_date
+                ? new Date(e.end_date).toLocaleDateString('it-IT', { month: 'short', year: 'numeric' })
+                : null;
+              return (
+                <li key={e.id} className="py-3 flex items-center justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-foreground truncate">
+                      {e.name}
+                      {ended && <span className="ml-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">· terminata</span>}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {e.category} · {e.is_recurring ? `Ricorrente da ${startLabel}${endLabel ? ` a ${endLabel}` : ''}` : `Una tantum · ${startLabel}`}
+                    </p>
+                  </div>
+                  <p className={`text-sm font-bold tabular-nums ${e.is_recurring && !ended ? 'text-foreground' : 'text-muted-foreground'}`}>
+                    <PrivacyMask>{formatEuro(e.amount)}</PrivacyMask>
+                  </p>
+                  <div className="flex gap-1">
+                    {e.is_recurring && !ended && (
+                      <Button size="icon" variant="ghost" onClick={() => handleEndBiz(e.id)} title="Termina spesa ricorrente">
+                        <Ban className="h-4 w-4 text-warning" />
+                      </Button>
+                    )}
+                    <Button size="icon" variant="ghost" onClick={() => openEditBiz(e)}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button size="icon" variant="ghost" onClick={() => handleDeleteBiz(e.id)}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
         )}
       </section>
 
@@ -511,7 +643,8 @@ const FinancialOS = () => {
           <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Come si calcola il target</h2>
         </div>
         <div className="space-y-1.5 text-xs text-muted-foreground font-mono">
-          <p>Spese ricorrenti: <PrivacyMask>{formatEuro(dynamicTarget.totalRecurringExpenses)}</PrivacyMask></p>
+          <p>Spese personali ricorrenti: <PrivacyMask>{formatEuro(dynamicTarget.totalRecurringExpenses)}</PrivacyMask></p>
+          <p>+ Spese aziendali ricorrenti: <PrivacyMask>{formatEuro(dynamicTarget.totalRecurringBusinessExpenses)}</PrivacyMask></p>
           <p>+ Risparmio obiettivo: <PrivacyMask>{formatEuro(dynamicTarget.monthlyGoalSaving)}</PrivacyMask></p>
           <p>= Netto necessario: <PrivacyMask>{formatEuro(dynamicTarget.totalNetNeeded)}</PrivacyMask></p>
           <p>÷ (1 − {Math.round(TAX_RATE * 100)}% tasse)</p>
@@ -536,9 +669,13 @@ const FinancialOS = () => {
             <span className="text-muted-foreground">−</span>
             <span><b className="text-foreground">Tasse ({Math.round(TAX_RATE * 100)}%)</b></span>
           </li>
+          <li className="flex items-center gap-2 pl-3">
+            <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: 'hsl(215 28% 45%)' }} />
+            <span><b className="text-foreground">− Spese Aziendali</b> (affitto studio, marketing, software…)</span>
+          </li>
           <li className="flex items-center gap-2">
             <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: 'hsl(158 64% 52%)' }} />
-            <span><b className="text-foreground">Utile Aziendale</b> — quello che resta dell'attività.</span>
+            <span><b className="text-foreground">Utile Aziendale</b> — il vero profitto del business.</span>
           </li>
           <li className="flex items-center gap-2 pl-3">
             <span className="text-muted-foreground">−</span>
@@ -881,6 +1018,76 @@ const FinancialOS = () => {
             <Button onClick={submitIncome} className="gradient-primary text-primary-foreground">
               Salva
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Business Expense Dialog */}
+      <Dialog open={bizOpen} onOpenChange={setBizOpen}>
+        <DialogContent className="rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>{bizForm.id ? 'Modifica spesa aziendale' : 'Nuova spesa aziendale'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label htmlFor="biz-name">Nome</Label>
+              <Input
+                id="biz-name"
+                placeholder="es. Affitto studio, Meta Ads"
+                value={bizForm.name}
+                onChange={e => setBizForm(s => ({ ...s, name: e.target.value }))}
+                autoFocus
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="biz-amount">Importo (€)</Label>
+                <Input
+                  id="biz-amount"
+                  inputMode="decimal"
+                  placeholder="0,00"
+                  value={bizForm.amount}
+                  onChange={e => setBizForm(s => ({ ...s, amount: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label htmlFor="biz-cat">Categoria</Label>
+                <Select
+                  value={bizForm.category}
+                  onValueChange={v => setBizForm(s => ({ ...s, category: v }))}
+                >
+                  <SelectTrigger id="biz-cat"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {STANDARD_BUSINESS_EXPENSE_CATEGORIES.map(c => (
+                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="flex items-center justify-between rounded-xl border border-border p-3">
+              <div>
+                <p className="text-sm font-semibold">Ricorrente mensile</p>
+                <p className="text-xs text-muted-foreground">Inclusa nel target dinamico e nello storico</p>
+              </div>
+              <Switch
+                checked={bizForm.is_recurring}
+                onCheckedChange={v => setBizForm(s => ({ ...s, is_recurring: v }))}
+              />
+            </div>
+            <div>
+              <Label htmlFor="biz-start">{bizForm.is_recurring ? 'Mese di inizio' : 'Data della spesa'}</Label>
+              <Input
+                id="biz-start"
+                type="date"
+                value={bizForm.start_date}
+                onChange={e => setBizForm(s => ({ ...s, start_date: e.target.value }))}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setBizOpen(false)}>Annulla</Button>
+            <Button onClick={submitBiz} className="gradient-primary text-primary-foreground">Salva</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -127,13 +127,30 @@ export interface MonthlyBreakdown {
   label: string;            // es. "Gen 2026"
   gross: number;            // ricavi business totali (Saldato)
   taxes: number;            // gross * TAX_RATE
-  net_business: number;     // gross - taxes
+  business_expenses: number;// somma spese aziendali attive nel mese
+  net_business: number;     // gross - taxes - business_expenses
   personal_expenses: number;// somma spese personali del mese
   personal_incomes: number; // somma ricavi personali del mese
   free_cash_flow: number;   // (net_business + personal_incomes) - personal_expenses
   // Backward compat: alcuni vecchi consumer leggono `net` come utile residuo dopo spese
   net: number;
 }
+
+export interface BusinessExpense {
+  id: string;
+  name: string;
+  amount: number;
+  is_recurring: boolean;
+  category: string;
+  created_at: string;
+  start_date: string;
+  end_date?: string;
+}
+
+export const STANDARD_BUSINESS_EXPENSE_CATEGORIES = [
+  'Affitto Studio', 'Marketing', 'Software', 'Attrezzatura', 'Formazione',
+  'Commercialista', 'Tasse Locali', 'Utenze', 'Trasferte', 'Altro',
+] as const;
 
 export interface PersonalIncome {
   id: string;
@@ -191,7 +208,8 @@ export interface LifeGoal {
 export interface DynamicTarget {
   monthlyGoalSaving: number;       // risparmio mensile per coprire l'obiettivo attivo
   totalRecurringExpenses: number;  // somma spese personali ricorrenti
-  totalNetNeeded: number;          // recurring + monthlyGoalSaving
+  totalRecurringBusinessExpenses: number; // somma spese aziendali ricorrenti
+  totalNetNeeded: number;          // recurring (personali + business) + monthlyGoalSaving
   dynamicGrossTarget: number;      // totalNetNeeded / (1 - 0.249)
   monthsUntilDeadline: number;     // mesi residui all'obiettivo (>=1)
 }

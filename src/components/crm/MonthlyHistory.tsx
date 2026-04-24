@@ -8,18 +8,18 @@ import {
 
 const COLOR_GROSS = 'hsl(160 84% 39%)';        // emerald-600
 const COLOR_NET_BUSINESS = 'hsl(158 64% 52%)'; // emerald-400
+const COLOR_BIZ_EXPENSES = 'hsl(215 28% 45%)'; // slate-600
 const COLOR_EXPENSES = 'hsl(347 77% 50%)';     // rose-600
 const COLOR_INCOMES = 'hsl(43 96% 56%)';       // amber-400
 const COLOR_FCF = 'hsl(221 83% 53%)';          // blue-600
 
 export const MonthlyHistory = () => {
   const { monthlyBreakdown } = useCrm();
-  // Mostra in ordine cronologico inverso (più recente in alto) per la tabella
   const rows = [...monthlyBreakdown].reverse();
-  // Per il grafico mantieni ordine cronologico
   const chartData = monthlyBreakdown.map(m => ({
     label: m.label,
     Lordo: Math.round(m.gross),
+    'Spese Aziend.': Math.round(m.business_expenses),
     'Utile Aziendale': Math.round(m.net_business),
     Spese: Math.round(m.personal_expenses),
     Ricavi: Math.round(m.personal_incomes),
@@ -64,6 +64,7 @@ export const MonthlyHistory = () => {
                 />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
                 <Bar dataKey="Lordo" fill={COLOR_GROSS} radius={[6, 6, 0, 0]} />
+                <Bar dataKey="Spese Aziend." fill={COLOR_BIZ_EXPENSES} radius={[6, 6, 0, 0]} />
                 <Bar dataKey="Utile Aziendale" fill={COLOR_NET_BUSINESS} radius={[6, 6, 0, 0]} />
                 <Bar dataKey="Spese" fill={COLOR_EXPENSES} radius={[6, 6, 0, 0]} />
                 <Bar dataKey="Ricavi" fill={COLOR_INCOMES} radius={[6, 6, 0, 0]} />
@@ -92,6 +93,10 @@ export const MonthlyHistory = () => {
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Tasse</span>
                       <span className="font-semibold tabular-nums" style={{ color: COLOR_EXPENSES }}>−<PrivacyMask>{formatEuro(m.taxes)}</PrivacyMask></span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Spese aziend.</span>
+                      <span className="font-semibold tabular-nums" style={{ color: COLOR_BIZ_EXPENSES }}>−<PrivacyMask>{formatEuro(m.business_expenses)}</PrivacyMask></span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Utile aziend.</span>

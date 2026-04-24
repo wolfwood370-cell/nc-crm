@@ -6,6 +6,7 @@ import {
   ChurnRisk, Gender, Transaction, PaymentType, PaymentMethod,
   Service, MonthlyBreakdown, HISTORY_START_YEAR, HISTORY_START_MONTH,
   PersonalExpense, LifeGoal, DynamicTarget, ExpenseCategory, PersonalIncome,
+  BusinessExpense,
 } from '@/types/crm';
 import { CrmContext, CrmContextValue } from './crmContext';
 
@@ -242,6 +243,29 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
         date: r.date,
         category: r.category ?? 'Altro',
         created_at: r.created_at,
+      }));
+    },
+  });
+
+  const { data: businessExpenses = [] } = useQuery({
+    queryKey: ['crm', 'business_expenses'],
+    queryFn: async (): Promise<BusinessExpense[]> => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any)
+        .from('business_expenses')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return (data as any[]).map((r) => ({
+        id: r.id,
+        name: r.name,
+        amount: Number(r.amount),
+        is_recurring: Boolean(r.is_recurring),
+        category: r.category,
+        created_at: r.created_at,
+        start_date: r.start_date ?? r.created_at,
+        end_date: r.end_date ?? undefined,
       }));
     },
   });
@@ -668,6 +692,72 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
     onSuccess: invalidateIncomes,
   });
 
+  // ---------- Business Expenses CRUD (Copy-on-Write SCD Type 2) ----------
+  const invalidateBizExpenses = () => queryClient.invalidateQueries({ queryKey: ['crm', 'business_expenses'] });
+  const addBusinessExpenseMutation = useMutation({
+    mutationFn: async (e: Omit<BusinessExpense, 'id' | 'created_at'>) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any).from('business_expenses').insert({
+        name: e.name,
+        amount: e.amount,
+        is_recurring: e.is_recurring,
+        category: e.category,
+        start_date: e.start_date,
+        end_date: e.end_date ?? null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: invalidateBizExpenses,
+  });
+  const updateBusinessExpenseMutation = useMutation({
+    mutationFn: async ({ id, patch }: { id: string; patch: Partial<BusinessExpense> }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const sb = supabase as any;
+      const { data: existing, error: fetchErr } = await sb
+        .from('business_expenses').select('*').eq('id', id).single();
+      if (fetchErr) throw fetchErr;
+      const isRecurring = Boolean(existing?.is_recurring);
+      const amountChanged =
+        patch.amount !== undefined && Number(patch.amount) !== Number(existing?.amount);
+      if (isRecurring && amountChanged) {
+        const todayIso = new Date().toISOString();
+        const { error: closeErr } = await sb
+          .from('business_expenses').update({ end_date: todayIso }).eq('id', id);
+        if (closeErr) throw closeErr;
+        const { error: insertErr } = await sb.from('business_expenses').insert({
+          name: patch.name ?? existing.name,
+          amount: patch.amount,
+          is_recurring: true,
+          category: patch.category ?? existing.category,
+          start_date: todayIso,
+          end_date: null,
+        });
+        if (insertErr) throw insertErr;
+        return;
+      }
+      const { error } = await sb.from('business_expenses').update(patch).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: invalidateBizExpenses,
+  });
+  const endBusinessExpenseMutation = useMutation({
+    mutationFn: async (id: string) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any)
+        .from('business_expenses').update({ end_date: new Date().toISOString() }).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: invalidateBizExpenses,
+  });
+  const deleteBusinessExpenseMutation = useMutation({
+    mutationFn: async (id: string) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any).from('business_expenses').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: invalidateBizExpenses,
+  });
+
   const current_monthly_revenue = useMemo(
     () => clients.filter(c => c.pipeline_stage === 'Closed Won').reduce((s, c) => s + (c.monthly_value || 0), 0),
     [clients]
@@ -676,15 +766,20 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
   // ---------- Dynamic Target ----------
   const dynamicTarget = useMemo<DynamicTarget>(() => {
     const now = new Date();
-    // Solo le ricorrenti ATTUALMENTE attive (start_date <= oggi e (end_date assente o futuro))
+    const isActiveRecurringNow = (e: { is_recurring: boolean; start_date: string; end_date?: string; }) => {
+      if (!e.is_recurring) return false;
+      const start = new Date(e.start_date);
+      if (start > now) return false;
+      if (e.end_date && new Date(e.end_date) < now) return false;
+      return true;
+    };
+
     const totalRecurringExpenses = personalExpenses
-      .filter(e => {
-        if (!e.is_recurring) return false;
-        const start = new Date(e.start_date);
-        if (start > now) return false;
-        if (e.end_date && new Date(e.end_date) < now) return false;
-        return true;
-      })
+      .filter(isActiveRecurringNow)
+      .reduce((s, e) => s + e.amount, 0);
+
+    const totalRecurringBusinessExpenses = businessExpenses
+      .filter(isActiveRecurringNow)
       .reduce((s, e) => s + e.amount, 0);
 
     const activeGoal = lifeGoals.find(g => g.is_active);
@@ -698,17 +793,19 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
       monthlyGoalSaving = remaining / monthsUntilDeadline;
     }
 
-    const totalNetNeeded = totalRecurringExpenses + monthlyGoalSaving;
+    // Net necessario copre: spese personali ricorrenti + spese business ricorrenti + risparmio obiettivo
+    const totalNetNeeded = totalRecurringExpenses + totalRecurringBusinessExpenses + monthlyGoalSaving;
     const dynamicGrossTarget = totalNetNeeded / (1 - TAX_RATE);
 
     return {
       totalRecurringExpenses,
+      totalRecurringBusinessExpenses,
       monthlyGoalSaving,
       totalNetNeeded,
       dynamicGrossTarget,
       monthsUntilDeadline,
     };
-  }, [personalExpenses, lifeGoals]);
+  }, [personalExpenses, businessExpenses, lifeGoals]);
 
   // Il target mensile della Dashboard segue il target dinamico se >0, altrimenti fallback manuale
   const effectiveMonthlyTarget = dynamicTarget.dynamicGrossTarget > 0
@@ -774,23 +871,20 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
       grossMap.set(key, (grossMap.get(key) ?? 0) + t.amount);
     }
 
-    const monthExpenses = (y: number, m: number): number => {
+    const sumMonthExpenses = (
+      list: { is_recurring: boolean; start_date: string; end_date?: string; amount: number }[],
+      y: number, m: number
+    ): number => {
       const monthStart = new Date(y, m, 1);
       const monthEnd = new Date(y, m + 1, 0, 23, 59, 59, 999);
       let total = 0;
-      for (const e of personalExpenses) {
+      for (const e of list) {
         const start = new Date(e.start_date);
         const end = e.end_date ? new Date(e.end_date) : null;
         if (e.is_recurring) {
-          // Attiva nel mese se start <= fine mese E (no end OR end >= inizio mese)
-          if (start <= monthEnd && (!end || end >= monthStart)) {
-            total += e.amount;
-          }
+          if (start <= monthEnd && (!end || end >= monthStart)) total += e.amount;
         } else {
-          // Una tantum: cade nel mese?
-          if (start >= monthStart && start <= monthEnd) {
-            total += e.amount;
-          }
+          if (start >= monthStart && start <= monthEnd) total += e.amount;
         }
       }
       return total;
@@ -813,14 +907,17 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
     while (y < endYear || (y === endYear && m <= endMonth)) {
       const gross = grossMap.get(`${y}-${m}`) ?? 0;
       const taxes = gross * TAX_RATE;
-      const net_business = gross - taxes;
-      const expenses = monthExpenses(y, m);
+      const biz_expenses = sumMonthExpenses(businessExpenses, y, m);
+      const net_business = gross - taxes - biz_expenses;
+      const expenses = sumMonthExpenses(personalExpenses, y, m);
       const incomes = monthIncomes(y, m);
       const free_cash_flow = net_business + incomes - expenses;
       const label = new Date(y, m, 1).toLocaleDateString('it-IT', { month: 'short', year: 'numeric' });
       months.push({
         year: y, month: m, label,
-        gross, taxes, net_business,
+        gross, taxes,
+        business_expenses: biz_expenses,
+        net_business,
         personal_expenses: expenses,
         personal_incomes: incomes,
         free_cash_flow,
@@ -830,7 +927,7 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
       if (m > 11) { m = 0; y += 1; }
     }
     return months;
-  }, [transactions, personalExpenses, personalIncomes]);
+  }, [transactions, personalExpenses, personalIncomes, businessExpenses]);
 
   const value: CrmContextValue = {
     clients,
@@ -872,6 +969,11 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
     addPersonalIncome: async (i) => { await addIncomeMutation.mutateAsync(i); },
     updatePersonalIncome: async (id, patch) => { await updateIncomeMutation.mutateAsync({ id, patch }); },
     deletePersonalIncome: async (id) => { await deleteIncomeMutation.mutateAsync(id); },
+    businessExpenses,
+    addBusinessExpense: async (e) => { await addBusinessExpenseMutation.mutateAsync(e); },
+    updateBusinessExpense: async (id, patch) => { await updateBusinessExpenseMutation.mutateAsync({ id, patch }); },
+    deleteBusinessExpense: async (id) => { await deleteBusinessExpenseMutation.mutateAsync(id); },
+    endBusinessExpense: async (id) => { await endBusinessExpenseMutation.mutateAsync(id); },
     setMonthlyTarget,
   };
 
