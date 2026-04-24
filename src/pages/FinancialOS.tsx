@@ -903,98 +903,128 @@ const FinancialOS = () => {
 
       {/* Manage Categories Dialog */}
       <Dialog open={manageCategoriesOpen} onOpenChange={setManageCategoriesOpen}>
-        <DialogContent className="rounded-2xl">
+        <DialogContent className="rounded-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Gestisci Categorie</DialogTitle>
-            <DialogDescription>Aggiungi, rinomina o elimina le categorie personalizzate per le tue spese.</DialogDescription>
+            <DialogDescription>
+              Aggiungi, rinomina o elimina le categorie personalizzate. Le categorie standard non sono modificabili.
+            </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3">
-            <p className="text-xs text-muted-foreground">
-              Le categorie standard non sono modificabili. Puoi rinominare o eliminare quelle personalizzate.
-              Le spese assegnate a una categoria eliminata mostreranno il vecchio nome finché non le modifichi.
-            </p>
 
-            {/* Standard */}
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Standard</p>
-              <div className="flex flex-wrap gap-1.5">
-                {STANDARD_EXPENSE_CATEGORIES.map(c => (
-                  <span key={c} className="text-xs rounded-full bg-secondary text-secondary-foreground px-2.5 py-1">
-                    {c}
-                  </span>
-                ))}
-              </div>
-            </div>
+          <Tabs value={manageTab} onValueChange={(v) => { setManageTab(v as 'personal' | 'business' | 'income'); setEditingCategoryId(null); }}>
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="personal">Spese Personali</TabsTrigger>
+              <TabsTrigger value="business">Spese Aziendali</TabsTrigger>
+              <TabsTrigger value="income">Entrate Extra</TabsTrigger>
+            </TabsList>
 
-            {/* Custom */}
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Personalizzate</p>
-              {expenseCategories.length === 0 ? (
-                <p className="text-xs text-muted-foreground">Nessuna categoria personalizzata. Verranno create automaticamente quando aggiungi una spesa con "+ Altro...".</p>
-              ) : (
-                <ul className="divide-y divide-border rounded-xl border border-border">
-                  {expenseCategories.map(c => {
-                    const isEditing = editingCategoryId === c.id;
-                    return (
-                      <li key={c.id} className="flex items-center gap-2 p-2.5">
-                        {isEditing ? (
-                          <>
-                            <Input
-                              value={editingCategoryName}
-                              onChange={e => setEditingCategoryName(e.target.value)}
-                              className="h-9"
-                              autoFocus
-                            />
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={async () => {
-                                const trimmed = editingCategoryName.trim();
-                                if (!trimmed) { toast.error('Nome non valido'); return; }
-                                try {
-                                  await updateExpenseCategory(c.id, trimmed);
-                                  toast.success('Categoria rinominata');
-                                  setEditingCategoryId(null);
-                                } catch { toast.error('Errore durante la modifica'); }
-                              }}
-                            >
-                              <Check className="h-4 w-4 text-primary" />
-                            </Button>
-                            <Button size="icon" variant="ghost" onClick={() => setEditingCategoryId(null)}>
-                              <X className="h-4 w-4 text-muted-foreground" />
-                            </Button>
-                          </>
-                        ) : (
-                          <>
-                            <span className="flex-1 text-sm font-medium text-foreground truncate">{c.name}</span>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => { setEditingCategoryId(c.id); setEditingCategoryName(c.name); }}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={async () => {
-                                try {
-                                  await deleteExpenseCategory(c.id);
-                                  toast.success('Categoria eliminata');
-                                } catch { toast.error('Errore durante l\'eliminazione'); }
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </div>
-          </div>
+            {([
+              {
+                key: 'personal' as const,
+                standard: STANDARD_EXPENSE_CATEGORIES as readonly string[],
+                custom: expenseCategories,
+                update: updateExpenseCategory,
+                remove: deleteExpenseCategory,
+              },
+              {
+                key: 'business' as const,
+                standard: STANDARD_BUSINESS_EXPENSE_CATEGORIES as readonly string[],
+                custom: businessExpenseCategories,
+                update: updateBusinessExpenseCategory,
+                remove: deleteBusinessExpenseCategory,
+              },
+              {
+                key: 'income' as const,
+                standard: STANDARD_INCOME_CATEGORIES as readonly string[],
+                custom: incomeCategoriesCustom,
+                update: updateIncomeCategory,
+                remove: deleteIncomeCategory,
+              },
+            ]).map(tab => (
+              <TabsContent key={tab.key} value={tab.key} className="space-y-4 mt-4">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Standard</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {tab.standard.map(c => (
+                      <span key={c} className="text-xs rounded-full bg-secondary text-secondary-foreground px-2.5 py-1">
+                        {c}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Personalizzate</p>
+                  {tab.custom.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">
+                      Nessuna categoria personalizzata. Verranno create automaticamente quando aggiungi un elemento con "+ Altro...".
+                    </p>
+                  ) : (
+                    <ul className="divide-y divide-border rounded-xl border border-border">
+                      {tab.custom.map(c => {
+                        const isEditing = editingCategoryId === c.id;
+                        return (
+                          <li key={c.id} className="flex items-center gap-2 p-2.5">
+                            {isEditing ? (
+                              <>
+                                <Input
+                                  value={editingCategoryName}
+                                  onChange={e => setEditingCategoryName(e.target.value)}
+                                  className="h-9"
+                                  autoFocus
+                                />
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={async () => {
+                                    const trimmed = editingCategoryName.trim();
+                                    if (!trimmed) { toast.error('Nome non valido'); return; }
+                                    try {
+                                      await tab.update(c.id, trimmed);
+                                      toast.success('Categoria rinominata');
+                                      setEditingCategoryId(null);
+                                    } catch { toast.error('Errore durante la modifica'); }
+                                  }}
+                                >
+                                  <Check className="h-4 w-4 text-primary" />
+                                </Button>
+                                <Button size="icon" variant="ghost" onClick={() => setEditingCategoryId(null)}>
+                                  <X className="h-4 w-4 text-muted-foreground" />
+                                </Button>
+                              </>
+                            ) : (
+                              <>
+                                <span className="flex-1 text-sm font-medium text-foreground truncate">{c.name}</span>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={() => { setEditingCategoryId(c.id); setEditingCategoryName(c.name); }}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={async () => {
+                                    try {
+                                      await tab.remove(c.id);
+                                      toast.success('Categoria eliminata');
+                                    } catch { toast.error('Errore durante l\'eliminazione'); }
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+              </TabsContent>
+            ))}
+          </Tabs>
+
           <DialogFooter>
             <Button variant="ghost" onClick={() => setManageCategoriesOpen(false)}>Chiudi</Button>
           </DialogFooter>
