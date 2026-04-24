@@ -669,9 +669,13 @@ const FinancialOS = () => {
             <span className="text-muted-foreground">−</span>
             <span><b className="text-foreground">Tasse ({Math.round(TAX_RATE * 100)}%)</b></span>
           </li>
+          <li className="flex items-center gap-2 pl-3">
+            <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: 'hsl(215 28% 45%)' }} />
+            <span><b className="text-foreground">− Spese Aziendali</b> (affitto studio, marketing, software…)</span>
+          </li>
           <li className="flex items-center gap-2">
             <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: 'hsl(158 64% 52%)' }} />
-            <span><b className="text-foreground">Utile Aziendale</b> — quello che resta dell'attività.</span>
+            <span><b className="text-foreground">Utile Aziendale</b> — il vero profitto del business.</span>
           </li>
           <li className="flex items-center gap-2 pl-3">
             <span className="text-muted-foreground">−</span>
