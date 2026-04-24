@@ -19,7 +19,13 @@ interface Props {
 export const PrivacyMask = forwardRef<HTMLSpanElement, Props>(
   ({ children, className, alwaysBlur = false, fallback }, ref) => {
     const { privacyMode } = usePrivacyMode();
-    if (!privacyMode) return <>{children}</>;
+    if (!privacyMode) {
+      return (
+        <span ref={ref} className={className}>
+          {children}
+        </span>
+      );
+    }
 
     if (fallback !== undefined) {
       return (

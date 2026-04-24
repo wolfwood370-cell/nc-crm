@@ -631,7 +631,12 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
   const addGoalMutation = useMutation({
     mutationFn: async (g: Omit<LifeGoal, 'id' | 'created_at'>) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any).from('life_goals').insert({
+      const sb = supabase as any;
+      // Invariante: un solo obiettivo attivo. Se questo è attivo, disattiva gli altri.
+      if (g.is_active) {
+        await sb.from('life_goals').update({ is_active: false }).eq('is_active', true);
+      }
+      const { error } = await sb.from('life_goals').insert({
         title: g.title,
         total_target_amount: g.total_target_amount,
         current_savings: g.current_savings,
@@ -645,7 +650,12 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
   const updateGoalMutation = useMutation({
     mutationFn: async ({ id, patch }: { id: string; patch: Partial<LifeGoal> }) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any).from('life_goals').update(patch).eq('id', id);
+      const sb = supabase as any;
+      // Invariante: un solo obiettivo attivo. Se stiamo attivando questo, disattiva gli altri.
+      if (patch.is_active === true) {
+        await sb.from('life_goals').update({ is_active: false }).neq('id', id).eq('is_active', true);
+      }
+      const { error } = await sb.from('life_goals').update(patch).eq('id', id);
       if (error) throw error;
     },
     onSuccess: invalidateGoals,
