@@ -14,6 +14,7 @@ import {
 import { Plus, Trash2, Pencil, Target, Wallet, TrendingUp, Sparkles, Ban, Settings2, Check, X } from 'lucide-react';
 import { PrivacyMask } from '@/components/crm/PrivacyMask';
 import { toast } from 'sonner';
+import { todayIso, dateInputToIso } from '@/lib/date';
 
 const NEW_CATEGORY_SENTINEL = '__new__';
 
@@ -25,8 +26,6 @@ interface ExpenseFormState {
   category: string;
   start_date: string;   // YYYY-MM-DD
 }
-
-const todayIso = () => new Date().toISOString().slice(0, 10);
 
 const emptyExpense = (): ExpenseFormState => ({
   name: '', amount: '', is_recurring: true, category: 'Altro', start_date: todayIso(),
@@ -115,7 +114,7 @@ const FinancialOS = () => {
       }
     }
 
-    const startIso = new Date(expenseForm.start_date + 'T00:00:00').toISOString();
+    const startIso = dateInputToIso(expenseForm.start_date) ?? new Date().toISOString();
     try {
       if (expenseForm.id) {
         await updatePersonalExpense(expenseForm.id, {
