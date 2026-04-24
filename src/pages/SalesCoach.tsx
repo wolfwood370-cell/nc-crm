@@ -1,13 +1,14 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useCrm } from '@/store/useCrm';
 import { usePrivacyMode } from '@/store/usePrivacyMode';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { BarChart3, Sparkles, Loader2, TrendingDown, Trophy, Lightbulb, Target, AlertCircle, Rocket, EyeOff } from 'lucide-react';
+import { BarChart3, Sparkles, Loader2, TrendingDown, Trophy, Lightbulb, Target, AlertCircle, Rocket, EyeOff, Clock3 } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatEuro } from '@/types/crm';
 import { ClientsSheet } from '@/components/crm/ClientsSheet';
+import { Link } from 'react-router-dom';
 
 interface FrictionPoint { titolo: string; descrizione: string }
 interface WinLossReport {
@@ -24,7 +25,33 @@ const SalesCoach = () => {
   const [generating, setGenerating] = useState(false);
   const [report, setReport] = useState<WinLossReport | null>(null);
   const [analyzedCount, setAnalyzedCount] = useState<number>(0);
+  const [reportDate, setReportDate] = useState<string | null>(null);
+  const [configId, setConfigId] = useState<string | null>(null);
   const [drill, setDrill] = useState<null | 'won' | 'lost'>(null);
+
+  // Load persisted latest report + config id on mount
+  useEffect(() => {
+    const load = async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data } = await (supabase as any)
+        .from('sales_coach_config')
+        .select('id, latest_report, last_report_date')
+        .limit(1)
+        .maybeSingle();
+      if (data) {
+        setConfigId(data.id);
+        if (data.latest_report) {
+          const r = data.latest_report as { report?: WinLossReport; analyzed?: number } & WinLossReport;
+          // Backward compatible: report could be either the raw WinLossReport or a wrapper
+          const actualReport = (r.report ?? r) as WinLossReport;
+          setReport(actualReport);
+          setAnalyzedCount(r.analyzed ?? 0);
+          setReportDate(data.last_report_date ?? null);
+        }
+      }
+    };
+    load();
+  }, []);
 
   const { won, lost, wonClients, lostClients, conversionRate, lostRevenue } = useMemo(() => {
     const wonList = clients.filter(c => c.pipeline_stage === 'Closed Won');
@@ -58,6 +85,14 @@ const SalesCoach = () => {
         ? Math.round(wonClients.reduce((s, c) => s + (c.monthly_value || 0), 0) / wonClients.length)
         : 0;
 
+      // Load latest strategy content as AI context
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: cfg } = await (supabase as any)
+        .from('sales_coach_config')
+        .select('id, sales_script, free_session_process, pt_pack_process')
+        .limit(1)
+        .maybeSingle();
+
       const { data, error } = await supabase.functions.invoke('analyze-win-loss', {
         body: {
           lost_clients: lostClients.map(c => ({
@@ -74,13 +109,37 @@ const SalesCoach = () => {
             current_monthly_revenue: financials?.current_monthly_revenue,
             avg_deal_value: avgDeal,
           },
+          strategy_context: {
+            sales_script: cfg?.sales_script ?? '',
+            free_session_process: cfg?.free_session_process ?? '',
+            pt_pack_process: cfg?.pt_pack_process ?? '',
+          },
         },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       if (!data?.report) throw new Error('Report AI vuoto');
-      setReport(data.report as WinLossReport);
-      setAnalyzedCount(data.analyzed ?? lostClients.length);
+      const newReport = data.report as WinLossReport;
+      const analyzed = data.analyzed ?? lostClients.length;
+      setReport(newReport);
+      setAnalyzedCount(analyzed);
+
+      // Persist latest report
+      const id = cfg?.id ?? configId;
+      const nowIso = new Date().toISOString();
+      if (id) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase as any)
+          .from('sales_coach_config')
+          .update({
+            latest_report: { report: newReport, analyzed },
+            last_report_date: nowIso,
+          })
+          .eq('id', id);
+        setReportDate(nowIso);
+        setConfigId(id);
+      }
+
       toast.success('Coach Insight pronto');
     } catch (e) {
       const raw = e instanceof Error ? e.message : '';
