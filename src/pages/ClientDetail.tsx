@@ -11,10 +11,10 @@ import { RoiChart } from '@/components/crm/RoiChart';
 import { ClientDetailSkeleton } from '@/components/crm/skeletons';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { Slider } from '@/components/ui/slider';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 import {
   PIPELINE_STAGES, PipelineStage, stageColorMap, pipelineStageLabel,
   CHURN_RISKS, ChurnRisk, RoiMetric,
@@ -23,6 +23,7 @@ import {
   PaymentType, PaymentMethod, PAYMENT_METHODS,
   formatEuro,
 } from '@/types/crm';
+import { baseLeadScore } from '@/lib/leadScore';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -72,7 +73,7 @@ const ClientDetail = () => {
   const [monthlyValue, setMonthlyValue] = useState('');
   const [renewal, setRenewal] = useState('');
   const [lastContact, setLastContact] = useState('');
-  const [score, setScore] = useState<number>(50);
+  
   const [churn, setChurn] = useState<ChurnRisk>('Basso');
   const [birthDate, setBirthDate] = useState('');
   const [gender, setGender] = useState<Gender | ''>('');
@@ -83,6 +84,12 @@ const ClientDetail = () => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [gdprConsent, setGdprConsent] = useState(false);
+
+  // Lead score behavior checklist (objective scoring)
+  const [behaviorResponsive, setBehaviorResponsive] = useState(false);
+  const [behaviorBookedSession, setBehaviorBookedSession] = useState(false);
+  const [behaviorNoMoneyObjection, setBehaviorNoMoneyObjection] = useState(false);
+  const [behaviorUrgency, setBehaviorUrgency] = useState(false);
 
   // ROI metric form
   const [metricName, setMetricName] = useState('');
@@ -97,7 +104,19 @@ const ClientDetail = () => {
       setMonthlyValue(client.monthly_value ? String(client.monthly_value) : '');
       setRenewal(client.next_renewal_date ? client.next_renewal_date.slice(0, 10) : '');
       setLastContact(client.last_contacted_at ? client.last_contacted_at.slice(0, 10) : '');
-      setScore(client.lead_score ?? 50);
+      // Decode behavior checklist from saved lead_score (best-effort)
+      const base = baseLeadScore(client.lead_source);
+      const delta = Math.max(0, (client.lead_score ?? base) - base);
+      // Greedy decode: booked(20) > responsive(10) > noMoney(10) > urgency(10)
+      let remaining = delta;
+      const booked = remaining >= 20; if (booked) remaining -= 20;
+      const responsive = remaining >= 10; if (responsive) remaining -= 10;
+      const noMoney = remaining >= 10; if (noMoney) remaining -= 10;
+      const urgency = remaining >= 10; if (urgency) remaining -= 10;
+      setBehaviorBookedSession(booked);
+      setBehaviorResponsive(responsive);
+      setBehaviorNoMoneyObjection(noMoney);
+      setBehaviorUrgency(urgency);
       setChurn(client.churn_risk ?? 'Basso');
       setBirthDate(client.birth_date ? client.birth_date.slice(0, 10) : '');
       setGender(client.gender ?? '');
@@ -124,6 +143,15 @@ const ClientDetail = () => {
     );
   }
 
+  // Derive lead_score from base (lead source) + objective behavior checklist, capped at 100
+  const baseScore = baseLeadScore(client.lead_source);
+  const behaviorBonus =
+    (behaviorResponsive ? 10 : 0) +
+    (behaviorBookedSession ? 20 : 0) +
+    (behaviorNoMoneyObjection ? 10 : 0) +
+    (behaviorUrgency ? 10 : 0);
+  const score = Math.min(100, baseScore + behaviorBonus);
+
   const handleSave = () => {
     const fn = firstName.trim();
     const ln = lastName.trim();
@@ -139,7 +167,7 @@ const ClientDetail = () => {
       next_renewal_date: renewal ? new Date(renewal).toISOString() : undefined,
       last_contacted_at: lastContact ? new Date(lastContact).toISOString() : undefined,
       lead_score: score,
-      churn_risk: churn,
+      churn_risk: client.pipeline_stage === 'Closed Won' ? churn : undefined,
       birth_date: birthDate || undefined,
       gender: (gender || undefined) as Gender | undefined,
       gym_signup_date: gymSignup || undefined,
@@ -268,7 +296,7 @@ const ClientDetail = () => {
               <h2 className="text-xl font-bold truncate text-foreground">{client.name}</h2>
               <div className="mt-1.5 flex flex-wrap gap-2">
                 <SourceBadge source={client.lead_source} />
-                {client.churn_risk && <ChurnBadge risk={client.churn_risk} />}
+                {client.pipeline_stage === 'Closed Won' && client.churn_risk && <ChurnBadge risk={client.churn_risk} />}
               </div>
             </div>
             {typeof client.lead_score === 'number' && (
@@ -405,45 +433,124 @@ const ClientDetail = () => {
               </div>
             </section>
 
-            {/* AI Scoring & Churn */}
+            {/* Lead Score guidato + Churn (solo per clienti attivi) */}
             <section className="rounded-2xl border border-border bg-card p-4 space-y-5 shadow-card">
               <div className="flex items-center gap-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/15 text-accent">
                   <Sparkles className="h-4 w-4" />
                 </div>
-                <h3 className="font-bold text-sm text-foreground">Lead Score & Rischio</h3>
+                <h3 className="font-bold text-sm text-foreground">Lead Score Guidato</h3>
               </div>
 
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Lead Score (probabilità di conversione)
-                  </label>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Punteggio Calcolato
+                    </p>
+                    <p className="mt-0.5 text-[11px] text-muted-foreground">
+                      Base fonte ({leadSourceLabel[client.lead_source]}): <span className="font-semibold text-foreground">{baseScore}</span> + Comportamenti: <span className="font-semibold text-foreground">+{behaviorBonus}</span>
+                    </p>
+                  </div>
                   <LeadScoreBadge score={score} />
                 </div>
-                <Slider
-                  value={[score]}
-                  onValueChange={(v) => setScore(v[0])}
-                  min={0}
-                  max={100}
-                  step={5}
-                  className="py-2"
-                />
+
+                {/* Progress bar visiva */}
+                <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
+                  <div
+                    className="h-full rounded-full bg-primary transition-all duration-300"
+                    style={{ width: `${score}%` }}
+                  />
+                </div>
+
+                {/* Checklist comportamenti oggettivi */}
+                <div className="space-y-2 pt-2">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Comportamenti osservati
+                  </p>
+
+                  <label
+                    htmlFor="behavior-responsive"
+                    className="flex items-start gap-3 rounded-xl border border-border bg-secondary/40 p-3 cursor-pointer active:bg-secondary transition-smooth"
+                  >
+                    <Checkbox
+                      id="behavior-responsive"
+                      checked={behaviorResponsive}
+                      onCheckedChange={(v) => setBehaviorResponsive(v === true)}
+                      className="mt-0.5"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground leading-tight">Risponde tempestivamente (entro poche ore)</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">+10 pt</p>
+                    </div>
+                  </label>
+
+                  <label
+                    htmlFor="behavior-booked"
+                    className="flex items-start gap-3 rounded-xl border border-border bg-secondary/40 p-3 cursor-pointer active:bg-secondary transition-smooth"
+                  >
+                    <Checkbox
+                      id="behavior-booked"
+                      checked={behaviorBookedSession}
+                      onCheckedChange={(v) => setBehaviorBookedSession(v === true)}
+                      className="mt-0.5"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground leading-tight">Ha fissato la sessione di prova / chiamata</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">+20 pt</p>
+                    </div>
+                  </label>
+
+                  <label
+                    htmlFor="behavior-nomoney"
+                    className="flex items-start gap-3 rounded-xl border border-border bg-secondary/40 p-3 cursor-pointer active:bg-secondary transition-smooth"
+                  >
+                    <Checkbox
+                      id="behavior-nomoney"
+                      checked={behaviorNoMoneyObjection}
+                      onCheckedChange={(v) => setBehaviorNoMoneyObjection(v === true)}
+                      className="mt-0.5"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground leading-tight">Non ha espresso forti obiezioni sui soldi</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">+10 pt</p>
+                    </div>
+                  </label>
+
+                  <label
+                    htmlFor="behavior-urgency"
+                    className="flex items-start gap-3 rounded-xl border border-border bg-secondary/40 p-3 cursor-pointer active:bg-secondary transition-smooth"
+                  >
+                    <Checkbox
+                      id="behavior-urgency"
+                      checked={behaviorUrgency}
+                      onCheckedChange={(v) => setBehaviorUrgency(v === true)}
+                      className="mt-0.5"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground leading-tight">Mostra urgenza o forte dolore / motivazione</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">+10 pt</p>
+                    </div>
+                  </label>
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                  <AlertTriangle className="h-3.5 w-3.5" /> Rischio di Abbandono
-                </label>
-                <Select value={churn} onValueChange={(v) => setChurn(v as ChurnRisk)}>
-                  <SelectTrigger className="h-12 rounded-xl border border-border bg-card text-sm font-semibold">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CHURN_RISKS.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* Rischio di Abbandono — solo per clienti paganti (Closed Won) */}
+              {isActiveClient && (
+                <div className="space-y-2 pt-2 border-t border-border">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <AlertTriangle className="h-3.5 w-3.5" /> Rischio di Abbandono
+                  </label>
+                  <Select value={churn} onValueChange={(v) => setChurn(v as ChurnRisk)}>
+                    <SelectTrigger className="h-12 rounded-xl border border-border bg-card text-sm font-semibold">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CHURN_RISKS.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </section>
 
             {/* AI Sales Assistant */}
