@@ -2,7 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useCrm, daysSince } from '@/store/useCrm';
 import {
   ChevronLeft, Heart, Shield, Eye, Phone, Euro, CalendarClock,
-  Sparkles, Activity, Plus, Trash2, MessageSquare, AlertTriangle, TrendingUp, Receipt, Loader2, CreditCard, Repeat, Ban, CheckCircle2, Clock,
+  Sparkles, Activity, Plus, Trash2, MessageSquare, AlertTriangle, TrendingUp, Receipt, Loader2, CreditCard, Repeat, Ban, CheckCircle2, Clock, Pencil,
 } from 'lucide-react';
 import { SourceBadge } from '@/components/crm/SourceBadge';
 import { ChurnBadge, LeadScoreBadge } from '@/components/crm/ScoreBadges';
@@ -14,6 +14,9 @@ import { Input } from '@/components/ui/input';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+} from '@/components/ui/dialog';
 
 import {
   PIPELINE_STAGES, PipelineStage, stageColorMap, pipelineStageLabel,
@@ -21,6 +24,7 @@ import {
   LEAD_SOURCES, LeadSource, leadSourceLabel,
   GENDERS, Gender, genderLabel,
   PaymentType, PaymentMethod, PAYMENT_METHODS,
+  Transaction, TransactionStatus, TRANSACTION_STATUSES,
   formatEuro,
 } from '@/types/crm';
 import { baseLeadScore } from '@/lib/leadScore';
@@ -39,7 +43,7 @@ const todayIso = () => new Date().toISOString().slice(0, 10);
 const ClientDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { clients, updateClient, deleteClient, moveClient, addRoiMetric, removeRoiMetric, isLoading, transactions, services, addTransaction, stopRecurringPayment, markTransactionPaid } = useCrm();
+  const { clients, updateClient, deleteClient, moveClient, addRoiMetric, removeRoiMetric, isLoading, transactions, services, addTransaction, stopRecurringPayment, markTransactionPaid, updateTransaction, deleteTransaction } = useCrm();
   const client = clients.find(c => c.id === id);
 
   // Inline payment form state
