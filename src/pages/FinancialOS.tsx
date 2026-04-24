@@ -1031,18 +1031,36 @@ const FinancialOS = () => {
                 />
               </div>
               <div>
-                <Label htmlFor="inc-cat">Categoria</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="inc-cat">Categoria</Label>
+                  <button
+                    type="button"
+                    onClick={() => { setManageTab('income'); setManageCategoriesOpen(true); }}
+                    className="text-[10px] font-semibold uppercase tracking-wider text-primary hover:underline inline-flex items-center gap-1"
+                  >
+                    <Settings2 className="h-3 w-3" /> Gestisci
+                  </button>
+                </div>
                 <Select
                   value={incomeForm.category}
                   onValueChange={v => setIncomeForm(s => ({ ...s, category: v }))}
                 >
                   <SelectTrigger id="inc-cat"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {incomeCategories.map(c => (
+                    {allIncomeCategoryNames.map(c => (
                       <SelectItem key={c} value={c}>{c}</SelectItem>
                     ))}
+                    <SelectItem value={NEW_CATEGORY_SENTINEL}>+ Altro...</SelectItem>
                   </SelectContent>
                 </Select>
+                {incomeForm.category === NEW_CATEGORY_SENTINEL && (
+                  <Input
+                    className="mt-2"
+                    placeholder="Nome nuova categoria"
+                    value={newIncomeCategoryName}
+                    onChange={e => setNewIncomeCategoryName(e.target.value)}
+                  />
+                )}
               </div>
             </div>
             <div>
