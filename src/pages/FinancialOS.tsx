@@ -1021,6 +1021,76 @@ const FinancialOS = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Business Expense Dialog */}
+      <Dialog open={bizOpen} onOpenChange={setBizOpen}>
+        <DialogContent className="rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>{bizForm.id ? 'Modifica spesa aziendale' : 'Nuova spesa aziendale'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label htmlFor="biz-name">Nome</Label>
+              <Input
+                id="biz-name"
+                placeholder="es. Affitto studio, Meta Ads"
+                value={bizForm.name}
+                onChange={e => setBizForm(s => ({ ...s, name: e.target.value }))}
+                autoFocus
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="biz-amount">Importo (€)</Label>
+                <Input
+                  id="biz-amount"
+                  inputMode="decimal"
+                  placeholder="0,00"
+                  value={bizForm.amount}
+                  onChange={e => setBizForm(s => ({ ...s, amount: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label htmlFor="biz-cat">Categoria</Label>
+                <Select
+                  value={bizForm.category}
+                  onValueChange={v => setBizForm(s => ({ ...s, category: v }))}
+                >
+                  <SelectTrigger id="biz-cat"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {STANDARD_BUSINESS_EXPENSE_CATEGORIES.map(c => (
+                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="flex items-center justify-between rounded-xl border border-border p-3">
+              <div>
+                <p className="text-sm font-semibold">Ricorrente mensile</p>
+                <p className="text-xs text-muted-foreground">Inclusa nel target dinamico e nello storico</p>
+              </div>
+              <Switch
+                checked={bizForm.is_recurring}
+                onCheckedChange={v => setBizForm(s => ({ ...s, is_recurring: v }))}
+              />
+            </div>
+            <div>
+              <Label htmlFor="biz-start">{bizForm.is_recurring ? 'Mese di inizio' : 'Data della spesa'}</Label>
+              <Input
+                id="biz-start"
+                type="date"
+                value={bizForm.start_date}
+                onChange={e => setBizForm(s => ({ ...s, start_date: e.target.value }))}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setBizOpen(false)}>Annulla</Button>
+            <Button onClick={submitBiz} className="gradient-primary text-primary-foreground">Salva</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
