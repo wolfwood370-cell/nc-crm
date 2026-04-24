@@ -22,12 +22,19 @@ interface GoalContext {
   avg_deal_value?: number;
 }
 
-const SYSTEM_PROMPT = `Sei un Direttore Vendite di un brand premium di Personal Training high-ticket in Italia.
-Stai analizzando le trattative perse di un singolo Personal Trainer indipendente per individuare attriti ricorrenti nel pitch fatto in palestra (spesso Fitactive) e correggerli la settimana successiva.
+const SYSTEM_PROMPT = `Sei un Direttore Vendite / consulente strategico di un brand premium di Personal Training high-ticket in Italia.
+Stai analizzando le trattative perse di un singolo Personal Trainer indipendente per individuare attriti ricorrenti e correggere il suo pitch la settimana successiva.
+
+Hai accesso a TRE documenti operativi del PT:
+1) Il suo SCRIPT DI VENDITA attuale
+2) Il processo con cui gestisce le SESSIONI GRATUITE
+3) Il processo con cui gestisce i PT PACK da 99€
+
+Devi agire come un consulente che ha letto questi documenti e confronta le obiezioni reali dei clienti persi con lo script/processi. Quando uno schema emerge (es. più clienti con obiezione "budget" mentre lo script non gestisce bene il budget), DEVI citarlo esplicitamente.
 
 Devi essere:
-- Concreto: niente teoria generica, solo pattern osservabili nei casi forniti.
-- Strategico: collega le obiezioni reali a un cambiamento specifico nello script di vendita iniziale.
+- Concreto: niente teoria generica, solo pattern osservabili nei casi forniti confrontati con lo script reale.
+- Strategico: collega le obiezioni reali a un cambiamento specifico nello script o nei processi.
 - Imprenditoriale: tieni conto del traguardo mensile del PT e quantifica il gap.
 
 Rispondi SOLO chiamando la funzione "return_winloss_report".`;
@@ -98,9 +105,14 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { lost_clients, goal_context } = (await req.json()) as {
+    const { lost_clients, goal_context, strategy_context } = (await req.json()) as {
       lost_clients: LostClient[];
       goal_context?: GoalContext;
+      strategy_context?: {
+        sales_script?: string;
+        free_session_process?: string;
+        pt_pack_process?: string;
+      };
     };
     if (!Array.isArray(lost_clients) || lost_clients.length === 0) {
       return new Response(JSON.stringify({ error: "Nessun cliente perso da analizzare" }), {
@@ -129,7 +141,22 @@ Deno.serve(async (req) => {
 Calcola il gap rispetto al target e usalo per il campo "entrepreneurial_nudge" indicando quanti deal aggiuntivi servono per restare in traiettoria.`
       : '';
 
-    const userPrompt = `Ecco ${lost_clients.length} trattative perse da analizzare:\n\n${formatted}${goalBlock}\n\nGenera il report seguendo la struttura del tool.`;
+    const strategyBlock = strategy_context && (strategy_context.sales_script || strategy_context.free_session_process || strategy_context.pt_pack_process)
+      ? `\n\n--- DOCUMENTI OPERATIVI DEL PT ---
+
+SCRIPT DI VENDITA ATTUALE:
+${strategy_context.sales_script?.trim() || '(non fornito)'}
+
+PROCESSO SESSIONI GRATUITE:
+${strategy_context.free_session_process?.trim() || '(non fornito)'}
+
+PROCESSO PT PACK 99€:
+${strategy_context.pt_pack_process?.trim() || '(non fornito)'}
+
+IMPORTANTE: Confronta le obiezioni reali dei casi sopra con questi documenti. Se noti che lo script non affronta un'obiezione che è emersa più volte, citalo ESPLICITAMENTE nei campi "perche_perdiamo" o "azioni_correttive". Esempio: "Il tuo script non affronta l'obiezione budget emersa in 3 casi su 5".`
+      : '';
+
+    const userPrompt = `Ecco ${lost_clients.length} trattative perse da analizzare:\n\n${formatted}${goalBlock}${strategyBlock}\n\nGenera il report seguendo la struttura del tool.`;
 
     const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
