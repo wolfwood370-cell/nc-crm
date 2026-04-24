@@ -224,6 +224,28 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
       return (data as any[]).map(r => ({ id: r.id, name: r.name, created_at: r.created_at }));
     },
   });
+
+  const { data: personalIncomes = [] } = useQuery({
+    queryKey: ['crm', 'personal_incomes'],
+    queryFn: async (): Promise<PersonalIncome[]> => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any)
+        .from('personal_incomes')
+        .select('*')
+        .order('date', { ascending: false });
+      if (error) throw error;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return (data as any[]).map(r => ({
+        id: r.id,
+        name: r.name,
+        amount: Number(r.amount),
+        date: r.date,
+        category: r.category ?? 'Altro',
+        created_at: r.created_at,
+      }));
+    },
+  });
+
   useEffect(() => {
     const channel = supabase
       .channel('crm-realtime')
@@ -244,6 +266,9 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'expense_categories' }, () => {
         queryClient.invalidateQueries({ queryKey: ['crm', 'expense_categories'] });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'personal_incomes' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['crm', 'personal_incomes'] });
       })
       .subscribe();
     return () => {
