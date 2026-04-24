@@ -445,6 +445,74 @@ const FinancialOS = () => {
         )}
       </section>
 
+      {/* Business Expenses */}
+      <section className="rounded-3xl border border-border bg-card p-5 shadow-card">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Briefcase className="h-4 w-4" style={{ color: 'hsl(215 28% 45%)' }} />
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Spese Aziendali</h2>
+          </div>
+          <Button size="sm" variant="outline" onClick={openNewBiz} className="rounded-xl">
+            <Plus className="h-4 w-4 mr-1" />
+            Aggiungi
+          </Button>
+        </div>
+
+        <div className="mt-4 flex items-baseline justify-between">
+          <p className="text-xs text-muted-foreground">Totale ricorrenti / mese</p>
+          <p className="text-2xl font-bold" style={{ color: 'hsl(215 28% 35%)' }}>
+            <PrivacyMask>{formatEuro(dynamicTarget.totalRecurringBusinessExpenses)}</PrivacyMask>
+          </p>
+        </div>
+
+        {businessExpenses.length === 0 ? (
+          <p className="mt-4 text-sm text-muted-foreground">
+            Aggiungi i costi del business (affitto studio, marketing, software, attrezzatura...) per separare il vero utile aziendale dal tuo cash flow personale.
+          </p>
+        ) : (
+          <ul className="mt-4 divide-y divide-border">
+            {businessExpenses.map(e => {
+              const ended = !!e.end_date;
+              const startLabel = e.start_date
+                ? new Date(e.start_date).toLocaleDateString('it-IT', { month: 'short', year: 'numeric' })
+                : '—';
+              const endLabel = e.end_date
+                ? new Date(e.end_date).toLocaleDateString('it-IT', { month: 'short', year: 'numeric' })
+                : null;
+              return (
+                <li key={e.id} className="py-3 flex items-center justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-foreground truncate">
+                      {e.name}
+                      {ended && <span className="ml-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">· terminata</span>}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {e.category} · {e.is_recurring ? `Ricorrente da ${startLabel}${endLabel ? ` a ${endLabel}` : ''}` : `Una tantum · ${startLabel}`}
+                    </p>
+                  </div>
+                  <p className={`text-sm font-bold tabular-nums ${e.is_recurring && !ended ? 'text-foreground' : 'text-muted-foreground'}`}>
+                    <PrivacyMask>{formatEuro(e.amount)}</PrivacyMask>
+                  </p>
+                  <div className="flex gap-1">
+                    {e.is_recurring && !ended && (
+                      <Button size="icon" variant="ghost" onClick={() => handleEndBiz(e.id)} title="Termina spesa ricorrente">
+                        <Ban className="h-4 w-4 text-warning" />
+                      </Button>
+                    )}
+                    <Button size="icon" variant="ghost" onClick={() => openEditBiz(e)}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button size="icon" variant="ghost" onClick={() => handleDeleteBiz(e.id)}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+
       {/* Personal Expenses */}
       <section className="rounded-3xl border border-border bg-card p-5 shadow-card">
         <div className="flex items-center justify-between">
