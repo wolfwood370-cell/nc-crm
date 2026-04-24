@@ -832,19 +832,43 @@ const FinancialOS = () => {
                 )}
               </div>
             </div>
-            <div className="flex items-center justify-between rounded-xl border border-border p-3">
+            <div className="rounded-xl border border-border p-3 space-y-3">
               <div>
-                <p className="text-sm font-semibold">Ricorrente mensile</p>
-                <p className="text-xs text-muted-foreground">Inclusa nel target dinamico</p>
+                <Label>Ricorrenza</Label>
+                <Select
+                  value={expenseForm.recurrence_type}
+                  onValueChange={(v: RecurrenceType) => setExpenseForm(s => ({ ...s, recurrence_type: v, recurrence_value: v === 'fixed_day' ? '1' : v === 'interval_days' ? '30' : '' }))}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Una tantum</SelectItem>
+                    <SelectItem value="fixed_day">Giorno fisso del mese</SelectItem>
+                    <SelectItem value="interval_days">Ogni N giorni</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <Switch
-                checked={expenseForm.is_recurring}
-                onCheckedChange={v => setExpenseForm(s => ({ ...s, is_recurring: v }))}
-              />
+              {expenseForm.recurrence_type === 'fixed_day' && (
+                <div>
+                  <Label htmlFor="exp-rec-day">Giorno del mese (1-31)</Label>
+                  <Input id="exp-rec-day" type="number" min={1} max={31}
+                    value={expenseForm.recurrence_value}
+                    onChange={e => setExpenseForm(s => ({ ...s, recurrence_value: e.target.value }))}
+                  />
+                </div>
+              )}
+              {expenseForm.recurrence_type === 'interval_days' && (
+                <div>
+                  <Label htmlFor="exp-rec-int">Intervallo in giorni</Label>
+                  <Input id="exp-rec-int" type="number" min={1}
+                    value={expenseForm.recurrence_value}
+                    onChange={e => setExpenseForm(s => ({ ...s, recurrence_value: e.target.value }))}
+                  />
+                </div>
+              )}
             </div>
             <div>
               <Label htmlFor="exp-start">
-                {expenseForm.is_recurring ? 'Mese di inizio' : 'Data della spesa'}
+                {expenseForm.recurrence_type !== 'none' ? 'Data di inizio' : 'Data della spesa'}
               </Label>
               <Input
                 id="exp-start"
@@ -853,7 +877,7 @@ const FinancialOS = () => {
                 onChange={e => setExpenseForm(s => ({ ...s, start_date: e.target.value }))}
               />
               <p className="mt-1 text-[11px] text-muted-foreground">
-                {expenseForm.is_recurring
+                {expenseForm.recurrence_type !== 'none'
                   ? 'Da questa data la spesa rientra nel calcolo dei mesi storici.'
                   : 'La spesa verrà conteggiata solo nel mese selezionato.'}
               </p>
@@ -1213,18 +1237,42 @@ const FinancialOS = () => {
                 )}
               </div>
             </div>
-            <div className="flex items-center justify-between rounded-xl border border-border p-3">
+            <div className="rounded-xl border border-border p-3 space-y-3">
               <div>
-                <p className="text-sm font-semibold">Ricorrente mensile</p>
-                <p className="text-xs text-muted-foreground">Inclusa nel target dinamico e nello storico</p>
+                <Label>Ricorrenza</Label>
+                <Select
+                  value={bizForm.recurrence_type}
+                  onValueChange={(v: RecurrenceType) => setBizForm(s => ({ ...s, recurrence_type: v, recurrence_value: v === 'fixed_day' ? '1' : v === 'interval_days' ? '30' : '' }))}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Una tantum</SelectItem>
+                    <SelectItem value="fixed_day">Giorno fisso del mese</SelectItem>
+                    <SelectItem value="interval_days">Ogni N giorni</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <Switch
-                checked={bizForm.is_recurring}
-                onCheckedChange={v => setBizForm(s => ({ ...s, is_recurring: v }))}
-              />
+              {bizForm.recurrence_type === 'fixed_day' && (
+                <div>
+                  <Label htmlFor="biz-rec-day">Giorno del mese (1-31)</Label>
+                  <Input id="biz-rec-day" type="number" min={1} max={31}
+                    value={bizForm.recurrence_value}
+                    onChange={e => setBizForm(s => ({ ...s, recurrence_value: e.target.value }))}
+                  />
+                </div>
+              )}
+              {bizForm.recurrence_type === 'interval_days' && (
+                <div>
+                  <Label htmlFor="biz-rec-int">Intervallo in giorni</Label>
+                  <Input id="biz-rec-int" type="number" min={1}
+                    value={bizForm.recurrence_value}
+                    onChange={e => setBizForm(s => ({ ...s, recurrence_value: e.target.value }))}
+                  />
+                </div>
+              )}
             </div>
             <div>
-              <Label htmlFor="biz-start">{bizForm.is_recurring ? 'Mese di inizio' : 'Data della spesa'}</Label>
+              <Label htmlFor="biz-start">{bizForm.recurrence_type !== 'none' ? 'Data di inizio' : 'Data della spesa'}</Label>
               <Input
                 id="biz-start"
                 type="date"
