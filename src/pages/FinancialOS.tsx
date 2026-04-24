@@ -768,7 +768,7 @@ const FinancialOS = () => {
                   <Label htmlFor="exp-cat">Categoria</Label>
                   <button
                     type="button"
-                    onClick={() => setManageCategoriesOpen(true)}
+                    onClick={() => { setManageTab('personal'); setManageCategoriesOpen(true); }}
                     className="text-[10px] font-semibold uppercase tracking-wider text-primary hover:underline inline-flex items-center gap-1"
                   >
                     <Settings2 className="h-3 w-3" /> Gestisci
