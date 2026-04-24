@@ -6,7 +6,7 @@ import {
   ChurnRisk, Gender, Transaction, PaymentType, PaymentMethod,
   Service, MonthlyBreakdown, HISTORY_START_YEAR, HISTORY_START_MONTH,
   PersonalExpense, LifeGoal, DynamicTarget, ExpenseCategory, PersonalIncome,
-  BusinessExpense,
+  BusinessExpense, BusinessExpenseCategory, IncomeCategory,
 } from '@/types/crm';
 import { CrmContext, CrmContextValue } from './crmContext';
 
@@ -226,6 +226,34 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
     },
   });
 
+  const { data: businessExpenseCategories = [] } = useQuery({
+    queryKey: ['crm', 'business_expense_categories'],
+    queryFn: async (): Promise<BusinessExpenseCategory[]> => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any)
+        .from('business_expense_categories')
+        .select('*')
+        .order('name', { ascending: true });
+      if (error) throw error;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return (data as any[]).map(r => ({ id: r.id, name: r.name, created_at: r.created_at }));
+    },
+  });
+
+  const { data: incomeCategories = [] } = useQuery({
+    queryKey: ['crm', 'income_categories'],
+    queryFn: async (): Promise<IncomeCategory[]> => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any)
+        .from('income_categories')
+        .select('*')
+        .order('name', { ascending: true });
+      if (error) throw error;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return (data as any[]).map(r => ({ id: r.id, name: r.name, created_at: r.created_at }));
+    },
+  });
+
   const { data: personalIncomes = [] } = useQuery({
     queryKey: ['crm', 'personal_incomes'],
     queryFn: async (): Promise<PersonalIncome[]> => {
@@ -296,6 +324,12 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'business_expenses' }, () => {
         queryClient.invalidateQueries({ queryKey: ['crm', 'business_expenses'] });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'business_expense_categories' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['crm', 'business_expense_categories'] });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'income_categories' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['crm', 'income_categories'] });
       })
       .subscribe();
     return () => {
@@ -761,6 +795,76 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
     onSuccess: invalidateBizExpenses,
   });
 
+  // ---------- Business Expense Categories CRUD ----------
+  const invalidateBizCategories = () => queryClient.invalidateQueries({ queryKey: ['crm', 'business_expense_categories'] });
+  const addBizCategoryMutation = useMutation({
+    mutationFn: async (name: string): Promise<BusinessExpenseCategory | null> => {
+      const trimmed = name.trim();
+      if (!trimmed) return null;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any)
+        .from('business_expense_categories').insert({ name: trimmed }).select().single();
+      if (error) {
+        if ((error as { code?: string }).code === '23505') return null;
+        throw error;
+      }
+      return data ? { id: data.id, name: data.name, created_at: data.created_at } : null;
+    },
+    onSuccess: invalidateBizCategories,
+  });
+  const updateBizCategoryMutation = useMutation({
+    mutationFn: async ({ id, name }: { id: string; name: string }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any)
+        .from('business_expense_categories').update({ name: name.trim() }).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: invalidateBizCategories,
+  });
+  const deleteBizCategoryMutation = useMutation({
+    mutationFn: async (id: string) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any).from('business_expense_categories').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: invalidateBizCategories,
+  });
+
+  // ---------- Income Categories CRUD ----------
+  const invalidateIncomeCategories = () => queryClient.invalidateQueries({ queryKey: ['crm', 'income_categories'] });
+  const addIncomeCategoryMutation = useMutation({
+    mutationFn: async (name: string): Promise<IncomeCategory | null> => {
+      const trimmed = name.trim();
+      if (!trimmed) return null;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any)
+        .from('income_categories').insert({ name: trimmed }).select().single();
+      if (error) {
+        if ((error as { code?: string }).code === '23505') return null;
+        throw error;
+      }
+      return data ? { id: data.id, name: data.name, created_at: data.created_at } : null;
+    },
+    onSuccess: invalidateIncomeCategories,
+  });
+  const updateIncomeCategoryMutation = useMutation({
+    mutationFn: async ({ id, name }: { id: string; name: string }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any)
+        .from('income_categories').update({ name: name.trim() }).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: invalidateIncomeCategories,
+  });
+  const deleteIncomeCategoryMutation = useMutation({
+    mutationFn: async (id: string) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any).from('income_categories').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: invalidateIncomeCategories,
+  });
+
   const current_monthly_revenue = useMemo(
     () => clients.filter(c => c.pipeline_stage === 'Closed Won').reduce((s, c) => s + (c.monthly_value || 0), 0),
     [clients]
@@ -977,6 +1081,14 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
     updateBusinessExpense: async (id, patch) => { await updateBusinessExpenseMutation.mutateAsync({ id, patch }); },
     deleteBusinessExpense: async (id) => { await deleteBusinessExpenseMutation.mutateAsync(id); },
     endBusinessExpense: async (id) => { await endBusinessExpenseMutation.mutateAsync(id); },
+    businessExpenseCategories,
+    addBusinessExpenseCategory: async (name) => await addBizCategoryMutation.mutateAsync(name),
+    updateBusinessExpenseCategory: async (id, name) => { await updateBizCategoryMutation.mutateAsync({ id, name }); },
+    deleteBusinessExpenseCategory: async (id) => { await deleteBizCategoryMutation.mutateAsync(id); },
+    incomeCategories,
+    addIncomeCategory: async (name) => await addIncomeCategoryMutation.mutateAsync(name),
+    updateIncomeCategory: async (id, name) => { await updateIncomeCategoryMutation.mutateAsync({ id, name }); },
+    deleteIncomeCategory: async (id) => { await deleteIncomeCategoryMutation.mutateAsync(id); },
     setMonthlyTarget,
   };
 

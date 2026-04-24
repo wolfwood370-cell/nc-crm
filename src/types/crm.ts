@@ -191,6 +191,18 @@ export interface ExpenseCategory {
   created_at: string;
 }
 
+export interface BusinessExpenseCategory {
+  id: string;
+  name: string;
+  created_at: string;
+}
+
+export interface IncomeCategory {
+  id: string;
+  name: string;
+  created_at: string;
+}
+
 export const STANDARD_EXPENSE_CATEGORIES = [
   'Casa', 'Bollette', 'Trasporti', 'Spesa', 'Tempo Libero', 'Abbonamenti', 'Salute', 'Altro',
 ] as const;

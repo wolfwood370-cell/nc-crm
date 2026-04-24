@@ -14,6 +14,7 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Plus, Trash2, Pencil, Target, Wallet, TrendingUp, Sparkles, Ban, Settings2, Check, X, ArrowDownToLine, Briefcase } from 'lucide-react';
 import { PrivacyMask } from '@/components/crm/PrivacyMask';
 import { toast } from 'sonner';
@@ -80,6 +81,8 @@ const FinancialOS = () => {
     expenseCategories, addExpenseCategory, updateExpenseCategory, deleteExpenseCategory,
     personalIncomes, addPersonalIncome, updatePersonalIncome, deletePersonalIncome,
     businessExpenses, addBusinessExpense, updateBusinessExpense, deleteBusinessExpense, endBusinessExpense,
+    businessExpenseCategories, addBusinessExpenseCategory, updateBusinessExpenseCategory, deleteBusinessExpenseCategory,
+    incomeCategories: incomeCategoriesCustom, addIncomeCategory, updateIncomeCategory, deleteIncomeCategory,
   } = useCrm();
 
   const [expenseOpen, setExpenseOpen] = useState(false);
@@ -88,12 +91,15 @@ const FinancialOS = () => {
   const [goalOpen, setGoalOpen] = useState(false);
   const [goalForm, setGoalForm] = useState<GoalFormState>(emptyGoal());
   const [manageCategoriesOpen, setManageCategoriesOpen] = useState(false);
+  const [manageTab, setManageTab] = useState<'personal' | 'business' | 'income'>('personal');
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [editingCategoryName, setEditingCategoryName] = useState('');
   const [incomeOpen, setIncomeOpen] = useState(false);
   const [incomeForm, setIncomeForm] = useState<IncomeFormState>(emptyIncome());
+  const [newIncomeCategoryName, setNewIncomeCategoryName] = useState('');
   const [bizOpen, setBizOpen] = useState(false);
   const [bizForm, setBizForm] = useState<BizExpenseFormState>(emptyBizExpense());
+  const [newBizCategoryName, setNewBizCategoryName] = useState('');
 
   // Unione categorie standard + custom (deduplicate case-insensitive)
   const allCategoryNames = useMemo(() => {
@@ -104,6 +110,24 @@ const FinancialOS = () => {
     });
     return Array.from(set.values());
   }, [expenseCategories]);
+
+  const allBizCategoryNames = useMemo(() => {
+    const set = new Map<string, string>();
+    STANDARD_BUSINESS_EXPENSE_CATEGORIES.forEach(c => set.set(c.toLowerCase(), c));
+    businessExpenseCategories.forEach(c => {
+      if (!set.has(c.name.toLowerCase())) set.set(c.name.toLowerCase(), c.name);
+    });
+    return Array.from(set.values());
+  }, [businessExpenseCategories]);
+
+  const allIncomeCategoryNames = useMemo(() => {
+    const set = new Map<string, string>();
+    STANDARD_INCOME_CATEGORIES.forEach(c => set.set(c.toLowerCase(), c));
+    incomeCategoriesCustom.forEach(c => {
+      if (!set.has(c.name.toLowerCase())) set.set(c.name.toLowerCase(), c.name);
+    });
+    return Array.from(set.values());
+  }, [incomeCategoriesCustom]);
 
   const activeGoal = useMemo(() => lifeGoals.find(g => g.is_active), [lifeGoals]);
   const goalProgress = activeGoal
@@ -232,7 +256,6 @@ const FinancialOS = () => {
   };
 
   // ---------- Personal Incomes ----------
-  const incomeCategories = useMemo(() => Array.from(new Set([...STANDARD_INCOME_CATEGORIES])), []);
   const monthlyIncomesTotal = useMemo(() => {
     const now = new Date();
     const y = now.getFullYear(); const m = now.getMonth();
@@ -241,13 +264,14 @@ const FinancialOS = () => {
       .reduce((s, i) => s + i.amount, 0);
   }, [personalIncomes]);
 
-  const openNewIncome = () => { setIncomeForm(emptyIncome()); setIncomeOpen(true); };
+  const openNewIncome = () => { setIncomeForm(emptyIncome()); setNewIncomeCategoryName(''); setIncomeOpen(true); };
   const openEditIncome = (i: PersonalIncome) => {
     setIncomeForm({
       id: i.id, name: i.name, amount: String(i.amount),
       date: i.date ? i.date.slice(0, 10) : todayIso(),
       category: i.category || 'Altro',
     });
+    setNewIncomeCategoryName('');
     setIncomeOpen(true);
   };
   const submitIncome = async () => {
@@ -257,16 +281,24 @@ const FinancialOS = () => {
       return;
     }
     if (!incomeForm.date) { toast.error('Seleziona la data'); return; }
+    let finalCategory = incomeForm.category;
+    if (incomeForm.category === NEW_CATEGORY_SENTINEL) {
+      const trimmed = newIncomeCategoryName.trim();
+      if (!trimmed) { toast.error('Inserisci il nome della nuova categoria'); return; }
+      finalCategory = trimmed;
+      const exists = allIncomeCategoryNames.some(n => n.toLowerCase() === trimmed.toLowerCase());
+      if (!exists) { try { await addIncomeCategory(trimmed); } catch { /* silent */ } }
+    }
     const dateIso = dateInputToIso(incomeForm.date) ?? new Date().toISOString();
     try {
       if (incomeForm.id) {
         await updatePersonalIncome(incomeForm.id, {
-          name: incomeForm.name.trim(), amount, date: dateIso, category: incomeForm.category,
+          name: incomeForm.name.trim(), amount, date: dateIso, category: finalCategory,
         });
         toast.success('Ricavo aggiornato');
       } else {
         await addPersonalIncome({
-          name: incomeForm.name.trim(), amount, date: dateIso, category: incomeForm.category,
+          name: incomeForm.name.trim(), amount, date: dateIso, category: finalCategory,
         });
         toast.success('Ricavo aggiunto');
       }
@@ -279,13 +311,14 @@ const FinancialOS = () => {
   };
 
   // ---------- Business Expenses ----------
-  const openNewBiz = () => { setBizForm(emptyBizExpense()); setBizOpen(true); };
+  const openNewBiz = () => { setBizForm(emptyBizExpense()); setNewBizCategoryName(''); setBizOpen(true); };
   const openEditBiz = (e: BusinessExpense) => {
     setBizForm({
       id: e.id, name: e.name, amount: String(e.amount),
       is_recurring: e.is_recurring, category: e.category,
       start_date: e.start_date ? e.start_date.slice(0, 10) : todayIso(),
     });
+    setNewBizCategoryName('');
     setBizOpen(true);
   };
   const submitBiz = async () => {
@@ -294,18 +327,26 @@ const FinancialOS = () => {
       toast.error('Inserisci nome e importo validi'); return;
     }
     if (!bizForm.start_date) { toast.error('Seleziona la data'); return; }
+    let finalCategory = bizForm.category;
+    if (bizForm.category === NEW_CATEGORY_SENTINEL) {
+      const trimmed = newBizCategoryName.trim();
+      if (!trimmed) { toast.error('Inserisci il nome della nuova categoria'); return; }
+      finalCategory = trimmed;
+      const exists = allBizCategoryNames.some(n => n.toLowerCase() === trimmed.toLowerCase());
+      if (!exists) { try { await addBusinessExpenseCategory(trimmed); } catch { /* silent */ } }
+    }
     const startIso = dateInputToIso(bizForm.start_date) ?? new Date().toISOString();
     try {
       if (bizForm.id) {
         await updateBusinessExpense(bizForm.id, {
           name: bizForm.name.trim(), amount, is_recurring: bizForm.is_recurring,
-          category: bizForm.category, start_date: startIso,
+          category: finalCategory, start_date: startIso,
         });
         toast.success('Spesa aziendale aggiornata');
       } else {
         await addBusinessExpense({
           name: bizForm.name.trim(), amount, is_recurring: bizForm.is_recurring,
-          category: bizForm.category, start_date: startIso,
+          category: finalCategory, start_date: startIso,
         });
         toast.success('Spesa aziendale aggiunta');
       }
@@ -727,7 +768,7 @@ const FinancialOS = () => {
                   <Label htmlFor="exp-cat">Categoria</Label>
                   <button
                     type="button"
-                    onClick={() => setManageCategoriesOpen(true)}
+                    onClick={() => { setManageTab('personal'); setManageCategoriesOpen(true); }}
                     className="text-[10px] font-semibold uppercase tracking-wider text-primary hover:underline inline-flex items-center gap-1"
                   >
                     <Settings2 className="h-3 w-3" /> Gestisci
@@ -862,98 +903,128 @@ const FinancialOS = () => {
 
       {/* Manage Categories Dialog */}
       <Dialog open={manageCategoriesOpen} onOpenChange={setManageCategoriesOpen}>
-        <DialogContent className="rounded-2xl">
+        <DialogContent className="rounded-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Gestisci Categorie</DialogTitle>
-            <DialogDescription>Aggiungi, rinomina o elimina le categorie personalizzate per le tue spese.</DialogDescription>
+            <DialogDescription>
+              Aggiungi, rinomina o elimina le categorie personalizzate. Le categorie standard non sono modificabili.
+            </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3">
-            <p className="text-xs text-muted-foreground">
-              Le categorie standard non sono modificabili. Puoi rinominare o eliminare quelle personalizzate.
-              Le spese assegnate a una categoria eliminata mostreranno il vecchio nome finché non le modifichi.
-            </p>
 
-            {/* Standard */}
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Standard</p>
-              <div className="flex flex-wrap gap-1.5">
-                {STANDARD_EXPENSE_CATEGORIES.map(c => (
-                  <span key={c} className="text-xs rounded-full bg-secondary text-secondary-foreground px-2.5 py-1">
-                    {c}
-                  </span>
-                ))}
-              </div>
-            </div>
+          <Tabs value={manageTab} onValueChange={(v) => { setManageTab(v as 'personal' | 'business' | 'income'); setEditingCategoryId(null); }}>
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="personal">Spese Personali</TabsTrigger>
+              <TabsTrigger value="business">Spese Aziendali</TabsTrigger>
+              <TabsTrigger value="income">Entrate Extra</TabsTrigger>
+            </TabsList>
 
-            {/* Custom */}
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Personalizzate</p>
-              {expenseCategories.length === 0 ? (
-                <p className="text-xs text-muted-foreground">Nessuna categoria personalizzata. Verranno create automaticamente quando aggiungi una spesa con "+ Altro...".</p>
-              ) : (
-                <ul className="divide-y divide-border rounded-xl border border-border">
-                  {expenseCategories.map(c => {
-                    const isEditing = editingCategoryId === c.id;
-                    return (
-                      <li key={c.id} className="flex items-center gap-2 p-2.5">
-                        {isEditing ? (
-                          <>
-                            <Input
-                              value={editingCategoryName}
-                              onChange={e => setEditingCategoryName(e.target.value)}
-                              className="h-9"
-                              autoFocus
-                            />
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={async () => {
-                                const trimmed = editingCategoryName.trim();
-                                if (!trimmed) { toast.error('Nome non valido'); return; }
-                                try {
-                                  await updateExpenseCategory(c.id, trimmed);
-                                  toast.success('Categoria rinominata');
-                                  setEditingCategoryId(null);
-                                } catch { toast.error('Errore durante la modifica'); }
-                              }}
-                            >
-                              <Check className="h-4 w-4 text-primary" />
-                            </Button>
-                            <Button size="icon" variant="ghost" onClick={() => setEditingCategoryId(null)}>
-                              <X className="h-4 w-4 text-muted-foreground" />
-                            </Button>
-                          </>
-                        ) : (
-                          <>
-                            <span className="flex-1 text-sm font-medium text-foreground truncate">{c.name}</span>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => { setEditingCategoryId(c.id); setEditingCategoryName(c.name); }}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={async () => {
-                                try {
-                                  await deleteExpenseCategory(c.id);
-                                  toast.success('Categoria eliminata');
-                                } catch { toast.error('Errore durante l\'eliminazione'); }
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </div>
-          </div>
+            {([
+              {
+                key: 'personal' as const,
+                standard: STANDARD_EXPENSE_CATEGORIES as readonly string[],
+                custom: expenseCategories,
+                update: updateExpenseCategory,
+                remove: deleteExpenseCategory,
+              },
+              {
+                key: 'business' as const,
+                standard: STANDARD_BUSINESS_EXPENSE_CATEGORIES as readonly string[],
+                custom: businessExpenseCategories,
+                update: updateBusinessExpenseCategory,
+                remove: deleteBusinessExpenseCategory,
+              },
+              {
+                key: 'income' as const,
+                standard: STANDARD_INCOME_CATEGORIES as readonly string[],
+                custom: incomeCategoriesCustom,
+                update: updateIncomeCategory,
+                remove: deleteIncomeCategory,
+              },
+            ]).map(tab => (
+              <TabsContent key={tab.key} value={tab.key} className="space-y-4 mt-4">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Standard</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {tab.standard.map(c => (
+                      <span key={c} className="text-xs rounded-full bg-secondary text-secondary-foreground px-2.5 py-1">
+                        {c}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Personalizzate</p>
+                  {tab.custom.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">
+                      Nessuna categoria personalizzata. Verranno create automaticamente quando aggiungi un elemento con "+ Altro...".
+                    </p>
+                  ) : (
+                    <ul className="divide-y divide-border rounded-xl border border-border">
+                      {tab.custom.map(c => {
+                        const isEditing = editingCategoryId === c.id;
+                        return (
+                          <li key={c.id} className="flex items-center gap-2 p-2.5">
+                            {isEditing ? (
+                              <>
+                                <Input
+                                  value={editingCategoryName}
+                                  onChange={e => setEditingCategoryName(e.target.value)}
+                                  className="h-9"
+                                  autoFocus
+                                />
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={async () => {
+                                    const trimmed = editingCategoryName.trim();
+                                    if (!trimmed) { toast.error('Nome non valido'); return; }
+                                    try {
+                                      await tab.update(c.id, trimmed);
+                                      toast.success('Categoria rinominata');
+                                      setEditingCategoryId(null);
+                                    } catch { toast.error('Errore durante la modifica'); }
+                                  }}
+                                >
+                                  <Check className="h-4 w-4 text-primary" />
+                                </Button>
+                                <Button size="icon" variant="ghost" onClick={() => setEditingCategoryId(null)}>
+                                  <X className="h-4 w-4 text-muted-foreground" />
+                                </Button>
+                              </>
+                            ) : (
+                              <>
+                                <span className="flex-1 text-sm font-medium text-foreground truncate">{c.name}</span>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={() => { setEditingCategoryId(c.id); setEditingCategoryName(c.name); }}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={async () => {
+                                    try {
+                                      await tab.remove(c.id);
+                                      toast.success('Categoria eliminata');
+                                    } catch { toast.error('Errore durante l\'eliminazione'); }
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+              </TabsContent>
+            ))}
+          </Tabs>
+
           <DialogFooter>
             <Button variant="ghost" onClick={() => setManageCategoriesOpen(false)}>Chiudi</Button>
           </DialogFooter>
@@ -990,18 +1061,36 @@ const FinancialOS = () => {
                 />
               </div>
               <div>
-                <Label htmlFor="inc-cat">Categoria</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="inc-cat">Categoria</Label>
+                  <button
+                    type="button"
+                    onClick={() => { setManageTab('income'); setManageCategoriesOpen(true); }}
+                    className="text-[10px] font-semibold uppercase tracking-wider text-primary hover:underline inline-flex items-center gap-1"
+                  >
+                    <Settings2 className="h-3 w-3" /> Gestisci
+                  </button>
+                </div>
                 <Select
                   value={incomeForm.category}
                   onValueChange={v => setIncomeForm(s => ({ ...s, category: v }))}
                 >
                   <SelectTrigger id="inc-cat"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {incomeCategories.map(c => (
+                    {allIncomeCategoryNames.map(c => (
                       <SelectItem key={c} value={c}>{c}</SelectItem>
                     ))}
+                    <SelectItem value={NEW_CATEGORY_SENTINEL}>+ Altro...</SelectItem>
                   </SelectContent>
                 </Select>
+                {incomeForm.category === NEW_CATEGORY_SENTINEL && (
+                  <Input
+                    className="mt-2"
+                    placeholder="Nome nuova categoria"
+                    value={newIncomeCategoryName}
+                    onChange={e => setNewIncomeCategoryName(e.target.value)}
+                  />
+                )}
               </div>
             </div>
             <div>
@@ -1056,18 +1145,36 @@ const FinancialOS = () => {
                 />
               </div>
               <div>
-                <Label htmlFor="biz-cat">Categoria</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="biz-cat">Categoria</Label>
+                  <button
+                    type="button"
+                    onClick={() => { setManageTab('business'); setManageCategoriesOpen(true); }}
+                    className="text-[10px] font-semibold uppercase tracking-wider text-primary hover:underline inline-flex items-center gap-1"
+                  >
+                    <Settings2 className="h-3 w-3" /> Gestisci
+                  </button>
+                </div>
                 <Select
                   value={bizForm.category}
                   onValueChange={v => setBizForm(s => ({ ...s, category: v }))}
                 >
                   <SelectTrigger id="biz-cat"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {STANDARD_BUSINESS_EXPENSE_CATEGORIES.map(c => (
+                    {allBizCategoryNames.map(c => (
                       <SelectItem key={c} value={c}>{c}</SelectItem>
                     ))}
+                    <SelectItem value={NEW_CATEGORY_SENTINEL}>+ Altro...</SelectItem>
                   </SelectContent>
                 </Select>
+                {bizForm.category === NEW_CATEGORY_SENTINEL && (
+                  <Input
+                    className="mt-2"
+                    placeholder="Nome nuova categoria"
+                    value={newBizCategoryName}
+                    onChange={e => setNewBizCategoryName(e.target.value)}
+                  />
+                )}
               </div>
             </div>
             <div className="flex items-center justify-between rounded-xl border border-border p-3">
