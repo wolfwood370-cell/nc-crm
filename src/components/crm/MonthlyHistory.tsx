@@ -95,6 +95,10 @@ export const MonthlyHistory = () => {
                       <span className="font-semibold tabular-nums" style={{ color: COLOR_EXPENSES }}>−<PrivacyMask>{formatEuro(m.taxes)}</PrivacyMask></span>
                     </div>
                     <div className="flex justify-between">
+                      <span className="text-muted-foreground">Spese aziend.</span>
+                      <span className="font-semibold tabular-nums" style={{ color: COLOR_BIZ_EXPENSES }}>−<PrivacyMask>{formatEuro(m.business_expenses)}</PrivacyMask></span>
+                    </div>
+                    <div className="flex justify-between">
                       <span className="text-muted-foreground">Utile aziend.</span>
                       <span className="font-semibold tabular-nums" style={{ color: COLOR_NET_BUSINESS }}><PrivacyMask>{formatEuro(m.net_business)}</PrivacyMask></span>
                     </div>
