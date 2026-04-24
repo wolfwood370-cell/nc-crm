@@ -37,8 +37,7 @@ import {
 import { ShieldCheck } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
-
-const todayIso = () => new Date().toISOString().slice(0, 10);
+import { todayIso, dateInputToIso } from '@/lib/date';
 
 const ClientDetail = () => {
   const { id } = useParams();
@@ -83,10 +82,8 @@ const ClientDetail = () => {
     try {
       await updateTransaction(editingTx.id, {
         amount: amt,
-        due_date: editDueDate ? new Date(editDueDate).toISOString() : undefined,
-        payment_date: editStatus === 'Saldato' && editPaymentDate
-          ? new Date(editPaymentDate).toISOString()
-          : undefined,
+        due_date: dateInputToIso(editDueDate),
+        payment_date: editStatus === 'Saldato' ? dateInputToIso(editPaymentDate) : undefined,
         status: editStatus,
       });
       toast.success('Pagamento aggiornato');
@@ -221,8 +218,8 @@ const ClientDetail = () => {
       objection_stated: stated,
       objection_real: real,
       monthly_value: monthlyValue ? Number(monthlyValue) : undefined,
-      next_renewal_date: renewal ? new Date(renewal).toISOString() : undefined,
-      last_contacted_at: lastContact ? new Date(lastContact).toISOString() : undefined,
+      next_renewal_date: dateInputToIso(renewal),
+      last_contacted_at: dateInputToIso(lastContact),
       lead_score: score,
       churn_risk: client.pipeline_stage === 'Closed Won' ? churn : undefined,
       birth_date: birthDate || undefined,
@@ -250,7 +247,7 @@ const ClientDetail = () => {
         payment_type: payType,
         payment_method: payMethod,
         installments_count: payType === 'A Rate' ? payInstallments : 1,
-        payment_date: payDate ? new Date(payDate).toISOString() : undefined,
+        payment_date: dateInputToIso(payDate),
       });
       const perInstallment = payType === 'A Rate' ? value / payInstallments : value;
       toast.success(
