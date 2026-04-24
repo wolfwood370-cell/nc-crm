@@ -154,12 +154,20 @@ const SalesCoach = () => {
 
   return (
     <div className="px-4 md:px-0 pt-6 pb-4 space-y-6 animate-fade-in">
-      <header>
-        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Analytics</p>
-        <h1 className="mt-1 text-2xl md:text-3xl font-bold tracking-tight">Sales Coach AI</h1>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Analizza le tue trattative per capire perché vinci e perché perdi.
-        </p>
+      <header className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Analytics</p>
+          <h1 className="mt-1 text-2xl md:text-3xl font-bold tracking-tight">Sales Coach AI</h1>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Analizza le tue trattative per capire perché vinci e perché perdi.
+          </p>
+        </div>
+        <Link
+          to="/strategy"
+          className="shrink-0 rounded-xl border border-border bg-card px-3 py-2 text-[11px] font-semibold text-foreground hover:border-primary/40 hover:text-primary transition-smooth inline-flex items-center gap-1.5"
+        >
+          <Sparkles className="h-3.5 w-3.5" /> Strategia
+        </Link>
       </header>
 
       {/* KPI cards */}
