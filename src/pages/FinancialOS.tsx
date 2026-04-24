@@ -278,6 +278,49 @@ const FinancialOS = () => {
     catch { toast.error('Errore durante l\'eliminazione'); }
   };
 
+  // ---------- Business Expenses ----------
+  const openNewBiz = () => { setBizForm(emptyBizExpense()); setBizOpen(true); };
+  const openEditBiz = (e: BusinessExpense) => {
+    setBizForm({
+      id: e.id, name: e.name, amount: String(e.amount),
+      is_recurring: e.is_recurring, category: e.category,
+      start_date: e.start_date ? e.start_date.slice(0, 10) : todayIso(),
+    });
+    setBizOpen(true);
+  };
+  const submitBiz = async () => {
+    const amount = Number(bizForm.amount.replace(',', '.'));
+    if (!bizForm.name.trim() || !Number.isFinite(amount) || amount < 0) {
+      toast.error('Inserisci nome e importo validi'); return;
+    }
+    if (!bizForm.start_date) { toast.error('Seleziona la data'); return; }
+    const startIso = dateInputToIso(bizForm.start_date) ?? new Date().toISOString();
+    try {
+      if (bizForm.id) {
+        await updateBusinessExpense(bizForm.id, {
+          name: bizForm.name.trim(), amount, is_recurring: bizForm.is_recurring,
+          category: bizForm.category, start_date: startIso,
+        });
+        toast.success('Spesa aziendale aggiornata');
+      } else {
+        await addBusinessExpense({
+          name: bizForm.name.trim(), amount, is_recurring: bizForm.is_recurring,
+          category: bizForm.category, start_date: startIso,
+        });
+        toast.success('Spesa aziendale aggiunta');
+      }
+      setBizOpen(false);
+    } catch { toast.error('Errore durante il salvataggio'); }
+  };
+  const handleDeleteBiz = async (id: string) => {
+    try { await deleteBusinessExpense(id); toast.success('Spesa eliminata'); }
+    catch { toast.error('Errore durante l\'eliminazione'); }
+  };
+  const handleEndBiz = async (id: string) => {
+    try { await endBusinessExpense(id); toast.success('Spesa ricorrente terminata'); }
+    catch { toast.error('Errore nell\'interruzione'); }
+  };
+
   return (
     <div className="px-4 md:px-0 pt-6 pb-24 md:pb-8 space-y-6 animate-fade-in">
 
