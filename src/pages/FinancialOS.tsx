@@ -60,6 +60,18 @@ const emptyIncome = (): IncomeFormState => ({
   name: '', amount: '', date: todayIso(), category: 'Altro',
 });
 
+interface BizExpenseFormState {
+  id?: string;
+  name: string;
+  amount: string;
+  is_recurring: boolean;
+  category: string;
+  start_date: string;
+}
+const emptyBizExpense = (): BizExpenseFormState => ({
+  name: '', amount: '', is_recurring: true, category: 'Software', start_date: todayIso(),
+});
+
 const FinancialOS = () => {
   const {
     personalExpenses, lifeGoals, dynamicTarget,
@@ -67,6 +79,7 @@ const FinancialOS = () => {
     addLifeGoal, updateLifeGoal, deleteLifeGoal,
     expenseCategories, addExpenseCategory, updateExpenseCategory, deleteExpenseCategory,
     personalIncomes, addPersonalIncome, updatePersonalIncome, deletePersonalIncome,
+    businessExpenses, addBusinessExpense, updateBusinessExpense, deleteBusinessExpense, endBusinessExpense,
   } = useCrm();
 
   const [expenseOpen, setExpenseOpen] = useState(false);
@@ -79,6 +92,8 @@ const FinancialOS = () => {
   const [editingCategoryName, setEditingCategoryName] = useState('');
   const [incomeOpen, setIncomeOpen] = useState(false);
   const [incomeForm, setIncomeForm] = useState<IncomeFormState>(emptyIncome());
+  const [bizOpen, setBizOpen] = useState(false);
+  const [bizForm, setBizForm] = useState<BizExpenseFormState>(emptyBizExpense());
 
   // Unione categorie standard + custom (deduplicate case-insensitive)
   const allCategoryNames = useMemo(() => {
