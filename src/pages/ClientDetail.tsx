@@ -11,10 +11,10 @@ import { RoiChart } from '@/components/crm/RoiChart';
 import { ClientDetailSkeleton } from '@/components/crm/skeletons';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { Slider } from '@/components/ui/slider';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Label } from '@/components/ui/label';
 import {
   PIPELINE_STAGES, PipelineStage, stageColorMap, pipelineStageLabel,
   CHURN_RISKS, ChurnRisk, RoiMetric,
@@ -23,6 +23,7 @@ import {
   PaymentType, PaymentMethod, PAYMENT_METHODS,
   formatEuro,
 } from '@/types/crm';
+import { baseLeadScore } from '@/lib/leadScore';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
