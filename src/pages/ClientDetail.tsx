@@ -104,7 +104,19 @@ const ClientDetail = () => {
       setMonthlyValue(client.monthly_value ? String(client.monthly_value) : '');
       setRenewal(client.next_renewal_date ? client.next_renewal_date.slice(0, 10) : '');
       setLastContact(client.last_contacted_at ? client.last_contacted_at.slice(0, 10) : '');
-      setScore(client.lead_score ?? 50);
+      // Decode behavior checklist from saved lead_score (best-effort)
+      const base = baseLeadScore(client.lead_source);
+      const delta = Math.max(0, (client.lead_score ?? base) - base);
+      // Greedy decode: booked(20) > responsive(10) > noMoney(10) > urgency(10)
+      let remaining = delta;
+      const booked = remaining >= 20; if (booked) remaining -= 20;
+      const responsive = remaining >= 10; if (responsive) remaining -= 10;
+      const noMoney = remaining >= 10; if (noMoney) remaining -= 10;
+      const urgency = remaining >= 10; if (urgency) remaining -= 10;
+      setBehaviorBookedSession(booked);
+      setBehaviorResponsive(responsive);
+      setBehaviorNoMoneyObjection(noMoney);
+      setBehaviorUrgency(urgency);
       setChurn(client.churn_risk ?? 'Basso');
       setBirthDate(client.birth_date ? client.birth_date.slice(0, 10) : '');
       setGender(client.gender ?? '');
