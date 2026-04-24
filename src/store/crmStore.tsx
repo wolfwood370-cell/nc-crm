@@ -6,7 +6,7 @@ import {
   ChurnRisk, Gender, Transaction, PaymentType, PaymentMethod,
   Service, MonthlyBreakdown, HISTORY_START_YEAR, HISTORY_START_MONTH,
   PersonalExpense, LifeGoal, DynamicTarget, ExpenseCategory, PersonalIncome,
-  BusinessExpense, BusinessExpenseCategory, IncomeCategory,
+  BusinessExpense, BusinessExpenseCategory, IncomeCategory, RecurrenceType,
 } from '@/types/crm';
 import { CrmContext, CrmContextValue } from './crmContext';
 
@@ -182,6 +182,8 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
         name: r.name,
         amount: Number(r.amount),
         is_recurring: Boolean(r.is_recurring),
+        recurrence_type: ((r.recurrence_type as RecurrenceType) ?? (r.is_recurring ? 'fixed_day' : 'none')),
+        recurrence_value: r.recurrence_value ?? undefined,
         category: r.category,
         created_at: r.created_at,
         start_date: r.start_date ?? r.created_at,
@@ -271,6 +273,9 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
         date: r.date,
         category: r.category ?? 'Altro',
         created_at: r.created_at,
+        recurrence_type: ((r.recurrence_type as RecurrenceType) ?? 'none'),
+        recurrence_value: r.recurrence_value ?? undefined,
+        end_date: r.end_date ?? undefined,
       }));
     },
   });
@@ -290,6 +295,8 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
         name: r.name,
         amount: Number(r.amount),
         is_recurring: Boolean(r.is_recurring),
+        recurrence_type: ((r.recurrence_type as RecurrenceType) ?? (r.is_recurring ? 'fixed_day' : 'none')),
+        recurrence_value: r.recurrence_value ?? undefined,
         category: r.category,
         created_at: r.created_at,
         start_date: r.start_date ?? r.created_at,
@@ -549,7 +556,9 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
       const { error } = await (supabase as any).from('personal_expenses').insert({
         name: e.name,
         amount: e.amount,
-        is_recurring: e.is_recurring,
+        is_recurring: e.recurrence_type !== 'none',
+        recurrence_type: e.recurrence_type,
+        recurrence_value: e.recurrence_value ?? null,
         category: e.category,
         start_date: e.start_date,
         end_date: e.end_date ?? null,
@@ -563,35 +572,30 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const sb = supabase as any;
 
-      // Recupera la riga esistente per decidere se fare Copy-on-Write
       const { data: existing, error: fetchErr } = await sb
-        .from('personal_expenses')
-        .select('*')
-        .eq('id', id)
-        .single();
+        .from('personal_expenses').select('*').eq('id', id).single();
       if (fetchErr) throw fetchErr;
 
-      const isRecurring = Boolean(existing?.is_recurring);
-      const amountChanged =
-        patch.amount !== undefined && Number(patch.amount) !== Number(existing?.amount);
+      const wasRecurring = (existing?.recurrence_type ?? (existing?.is_recurring ? 'fixed_day' : 'none')) !== 'none';
+      const newRecurrenceType = patch.recurrence_type ?? existing?.recurrence_type ?? (existing?.is_recurring ? 'fixed_day' : 'none');
+      const newRecurrenceValue = patch.recurrence_value !== undefined ? patch.recurrence_value : existing?.recurrence_value;
+      const amountChanged = patch.amount !== undefined && Number(patch.amount) !== Number(existing?.amount);
+      const recurrenceChanged =
+        (patch.recurrence_type !== undefined && patch.recurrence_type !== existing?.recurrence_type) ||
+        (patch.recurrence_value !== undefined && patch.recurrence_value !== existing?.recurrence_value);
 
-      // SCD Type 2: se è ricorrente E l'importo cambia, chiudiamo la vecchia riga
-      // (end_date = oggi) e creiamo una nuova riga con il nuovo importo da oggi.
-      if (isRecurring && amountChanged) {
+      // SCD Type 2: snapshot storico se cambia importo o pattern di una ricorrente
+      if (wasRecurring && (amountChanged || recurrenceChanged)) {
         const todayIso = new Date().toISOString();
-
-        // 1) Chiudi storicamente la vecchia spesa
         const { error: closeErr } = await sb
-          .from('personal_expenses')
-          .update({ end_date: todayIso })
-          .eq('id', id);
+          .from('personal_expenses').update({ end_date: todayIso }).eq('id', id);
         if (closeErr) throw closeErr;
-
-        // 2) Crea una nuova riga con i campi aggiornati (merge patch su existing)
         const { error: insertErr } = await sb.from('personal_expenses').insert({
           name: patch.name ?? existing.name,
-          amount: patch.amount,
-          is_recurring: true,
+          amount: patch.amount ?? existing.amount,
+          is_recurring: newRecurrenceType !== 'none',
+          recurrence_type: newRecurrenceType,
+          recurrence_value: newRecurrenceValue ?? null,
           category: patch.category ?? existing.category,
           start_date: todayIso,
           end_date: null,
@@ -600,8 +604,9 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
-      // Caso normale: aggiorno in place (rinomina, cambio categoria, ecc.)
-      const { error } = await sb.from('personal_expenses').update(patch).eq('id', id);
+      const dbPatch: Record<string, unknown> = { ...patch };
+      if (patch.recurrence_type !== undefined) dbPatch.is_recurring = patch.recurrence_type !== 'none';
+      const { error } = await sb.from('personal_expenses').update(dbPatch).eq('id', id);
       if (error) throw error;
     },
     onSuccess: invalidateExpenses,
@@ -717,6 +722,9 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
         amount: i.amount,
         date: i.date,
         category: i.category,
+        recurrence_type: i.recurrence_type ?? 'none',
+        recurrence_value: i.recurrence_value ?? null,
+        end_date: i.end_date ?? null,
       });
       if (error) throw error;
     },
@@ -724,8 +732,9 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
   });
   const updateIncomeMutation = useMutation({
     mutationFn: async ({ id, patch }: { id: string; patch: Partial<PersonalIncome> }) => {
+      const dbPatch: Record<string, unknown> = { ...patch };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any).from('personal_incomes').update(patch).eq('id', id);
+      const { error } = await (supabase as any).from('personal_incomes').update(dbPatch).eq('id', id);
       if (error) throw error;
     },
     onSuccess: invalidateIncomes,
@@ -747,7 +756,9 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
       const { error } = await (supabase as any).from('business_expenses').insert({
         name: e.name,
         amount: e.amount,
-        is_recurring: e.is_recurring,
+        is_recurring: e.recurrence_type !== 'none',
+        recurrence_type: e.recurrence_type,
+        recurrence_value: e.recurrence_value ?? null,
         category: e.category,
         start_date: e.start_date,
         end_date: e.end_date ?? null,
@@ -763,18 +774,24 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
       const { data: existing, error: fetchErr } = await sb
         .from('business_expenses').select('*').eq('id', id).single();
       if (fetchErr) throw fetchErr;
-      const isRecurring = Boolean(existing?.is_recurring);
-      const amountChanged =
-        patch.amount !== undefined && Number(patch.amount) !== Number(existing?.amount);
-      if (isRecurring && amountChanged) {
+      const wasRecurring = (existing?.recurrence_type ?? (existing?.is_recurring ? 'fixed_day' : 'none')) !== 'none';
+      const newRecurrenceType = patch.recurrence_type ?? existing?.recurrence_type ?? (existing?.is_recurring ? 'fixed_day' : 'none');
+      const newRecurrenceValue = patch.recurrence_value !== undefined ? patch.recurrence_value : existing?.recurrence_value;
+      const amountChanged = patch.amount !== undefined && Number(patch.amount) !== Number(existing?.amount);
+      const recurrenceChanged =
+        (patch.recurrence_type !== undefined && patch.recurrence_type !== existing?.recurrence_type) ||
+        (patch.recurrence_value !== undefined && patch.recurrence_value !== existing?.recurrence_value);
+      if (wasRecurring && (amountChanged || recurrenceChanged)) {
         const todayIso = new Date().toISOString();
         const { error: closeErr } = await sb
           .from('business_expenses').update({ end_date: todayIso }).eq('id', id);
         if (closeErr) throw closeErr;
         const { error: insertErr } = await sb.from('business_expenses').insert({
           name: patch.name ?? existing.name,
-          amount: patch.amount,
-          is_recurring: true,
+          amount: patch.amount ?? existing.amount,
+          is_recurring: newRecurrenceType !== 'none',
+          recurrence_type: newRecurrenceType,
+          recurrence_value: newRecurrenceValue ?? null,
           category: patch.category ?? existing.category,
           start_date: todayIso,
           end_date: null,
@@ -782,7 +799,9 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
         if (insertErr) throw insertErr;
         return;
       }
-      const { error } = await sb.from('business_expenses').update(patch).eq('id', id);
+      const dbPatch: Record<string, unknown> = { ...patch };
+      if (patch.recurrence_type !== undefined) dbPatch.is_recurring = patch.recurrence_type !== 'none';
+      const { error } = await sb.from('business_expenses').update(dbPatch).eq('id', id);
       if (error) throw error;
     },
     onSuccess: invalidateBizExpenses,
@@ -880,24 +899,83 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
     [clients]
   );
 
-  // ---------- Dynamic Target ----------
+  // ---------- Recurrence engine ----------
+  // Conta quante volte un item ricorrente cade nel mese (y,m), rispettando start/end.
+  // Per 'fixed_day' = 0 o 1 occorrenza nel mese (clamp al last day del mese).
+  // Per 'interval_days' = numero di multipli di N giorni a partire da start_date che cadono nel mese.
+  type RecurringRow = {
+    recurrence_type: RecurrenceType;
+    recurrence_value?: number;
+    start_date: string;
+    end_date?: string;
+    amount: number;
+  };
+  const occurrencesInMonth = (e: RecurringRow, y: number, m: number): number => {
+    const monthStart = new Date(y, m, 1);
+    const monthEnd = new Date(y, m + 1, 0, 23, 59, 59, 999);
+    const lastDay = monthEnd.getDate();
+    const start = new Date(e.start_date);
+    const end = e.end_date ? new Date(e.end_date) : null;
+    const winStart = start > monthStart ? start : monthStart;
+    const winEnd = end && end < monthEnd ? end : monthEnd;
+    if (winStart > winEnd) return 0;
+
+    if (e.recurrence_type === 'fixed_day') {
+      const day = Math.min(Math.max(1, e.recurrence_value ?? start.getDate()), lastDay);
+      const occ = new Date(y, m, day, 12, 0, 0);
+      return occ >= winStart && occ <= winEnd ? 1 : 0;
+    }
+    if (e.recurrence_type === 'interval_days') {
+      const interval = Math.max(1, e.recurrence_value ?? 30);
+      const msPerDay = 86_400_000;
+      const diffDays = Math.floor((winStart.getTime() - start.getTime()) / msPerDay);
+      const firstK = Math.max(0, Math.ceil(diffDays / interval));
+      let count = 0;
+      for (let k = firstK; k < 1000; k++) {
+        const occ = new Date(start.getTime() + k * interval * msPerDay);
+        if (occ > winEnd) break;
+        if (occ >= winStart) count++;
+      }
+      return count;
+    }
+    return 0;
+  };
+
+  // ---------- Dynamic Target (Adaptive Buffer) ----------
   const dynamicTarget = useMemo<DynamicTarget>(() => {
     const now = new Date();
-    const isActiveRecurringNow = (e: { is_recurring: boolean; start_date: string; end_date?: string; }) => {
-      if (!e.is_recurring) return false;
-      const start = new Date(e.start_date);
-      if (start > now) return false;
-      if (e.end_date && new Date(e.end_date) < now) return false;
-      return true;
-    };
+    const y = now.getFullYear();
+    const m = now.getMonth();
 
+    // Fixed Baseline: occorrenze previste questo mese × amount
     const totalRecurringExpenses = personalExpenses
-      .filter(isActiveRecurringNow)
-      .reduce((s, e) => s + e.amount, 0);
+      .filter(e => e.recurrence_type !== 'none')
+      .reduce((s, e) => s + e.amount * occurrencesInMonth(e, y, m), 0);
 
     const totalRecurringBusinessExpenses = businessExpenses
-      .filter(isActiveRecurringNow)
-      .reduce((s, e) => s + e.amount, 0);
+      .filter(e => e.recurrence_type !== 'none')
+      .reduce((s, e) => s + e.amount * occurrencesInMonth(e, y, m), 0);
+
+    const fixedBaseline = totalRecurringExpenses + totalRecurringBusinessExpenses;
+
+    // Adaptive Buffer: media mensile delle spese 'none' negli ultimi 90 giorni
+    const ninetyDaysAgo = new Date(now.getTime() - 90 * 86_400_000);
+    const occasionalSum =
+      personalExpenses
+        .filter(e => e.recurrence_type === 'none')
+        .filter(e => {
+          const d = new Date(e.start_date);
+          return d >= ninetyDaysAgo && d <= now;
+        })
+        .reduce((s, e) => s + e.amount, 0) +
+      businessExpenses
+        .filter(e => e.recurrence_type === 'none')
+        .filter(e => {
+          const d = new Date(e.start_date);
+          return d >= ninetyDaysAgo && d <= now;
+        })
+        .reduce((s, e) => s + e.amount, 0);
+    const adaptiveBuffer = occasionalSum / 3; // 90gg → media mensile
 
     const activeGoal = lifeGoals.find(g => g.is_active);
     let monthlyGoalSaving = 0;
@@ -910,13 +988,14 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
       monthlyGoalSaving = remaining / monthsUntilDeadline;
     }
 
-    // Net necessario copre: spese personali ricorrenti + spese business ricorrenti + risparmio obiettivo
-    const totalNetNeeded = totalRecurringExpenses + totalRecurringBusinessExpenses + monthlyGoalSaving;
+    const totalNetNeeded = fixedBaseline + adaptiveBuffer + monthlyGoalSaving;
     const dynamicGrossTarget = totalNetNeeded / (1 - TAX_RATE);
 
     return {
       totalRecurringExpenses,
       totalRecurringBusinessExpenses,
+      fixedBaseline,
+      adaptiveBuffer,
       monthlyGoalSaving,
       totalNetNeeded,
       dynamicGrossTarget,
@@ -989,19 +1068,18 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
     }
 
     const sumMonthExpenses = (
-      list: { is_recurring: boolean; start_date: string; end_date?: string; amount: number }[],
+      list: RecurringRow[],
       y: number, m: number
     ): number => {
       const monthStart = new Date(y, m, 1);
       const monthEnd = new Date(y, m + 1, 0, 23, 59, 59, 999);
       let total = 0;
       for (const e of list) {
-        const start = new Date(e.start_date);
-        const end = e.end_date ? new Date(e.end_date) : null;
-        if (e.is_recurring) {
-          if (start <= monthEnd && (!end || end >= monthStart)) total += e.amount;
-        } else {
+        if (e.recurrence_type === 'none') {
+          const start = new Date(e.start_date);
           if (start >= monthStart && start <= monthEnd) total += e.amount;
+        } else {
+          total += e.amount * occurrencesInMonth(e, y, m);
         }
       }
       return total;
@@ -1012,8 +1090,15 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
       const monthEnd = new Date(y, m + 1, 0, 23, 59, 59, 999);
       let total = 0;
       for (const i of personalIncomes) {
-        const d = new Date(i.date);
-        if (d >= monthStart && d <= monthEnd) total += i.amount;
+        if (i.recurrence_type && i.recurrence_type !== 'none') {
+          total += i.amount * occurrencesInMonth(
+            { recurrence_type: i.recurrence_type, recurrence_value: i.recurrence_value, start_date: i.date, end_date: i.end_date, amount: i.amount },
+            y, m,
+          );
+        } else {
+          const d = new Date(i.date);
+          if (d >= monthStart && d <= monthEnd) total += i.amount;
+        }
       }
       return total;
     };

@@ -3,6 +3,7 @@ import { useCrm } from '@/store/useCrm';
 import {
   formatEuro, TAX_RATE, PersonalExpense, LifeGoal, PersonalIncome, BusinessExpense,
   STANDARD_EXPENSE_CATEGORIES, STANDARD_INCOME_CATEGORIES, STANDARD_BUSINESS_EXPENSE_CATEGORIES,
+  RecurrenceType, recurrenceTypeLabel,
 } from '@/types/crm';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,13 +27,15 @@ interface ExpenseFormState {
   id?: string;
   name: string;
   amount: string;
-  is_recurring: boolean;
+  recurrence_type: RecurrenceType;
+  recurrence_value: string;
   category: string;
-  start_date: string;   // YYYY-MM-DD
+  start_date: string;
 }
 
 const emptyExpense = (): ExpenseFormState => ({
-  name: '', amount: '', is_recurring: true, category: 'Altro', start_date: todayIso(),
+  name: '', amount: '', recurrence_type: 'fixed_day', recurrence_value: '1',
+  category: 'Altro', start_date: todayIso(),
 });
 
 interface GoalFormState {
@@ -53,24 +56,29 @@ interface IncomeFormState {
   id?: string;
   name: string;
   amount: string;
-  date: string;        // YYYY-MM-DD
+  date: string;
   category: string;
+  recurrence_type: RecurrenceType;
+  recurrence_value: string;
 }
 
 const emptyIncome = (): IncomeFormState => ({
   name: '', amount: '', date: todayIso(), category: 'Altro',
+  recurrence_type: 'none', recurrence_value: '',
 });
 
 interface BizExpenseFormState {
   id?: string;
   name: string;
   amount: string;
-  is_recurring: boolean;
+  recurrence_type: RecurrenceType;
+  recurrence_value: string;
   category: string;
   start_date: string;
 }
 const emptyBizExpense = (): BizExpenseFormState => ({
-  name: '', amount: '', is_recurring: true, category: 'Software', start_date: todayIso(),
+  name: '', amount: '', recurrence_type: 'fixed_day', recurrence_value: '1',
+  category: 'Software', start_date: todayIso(),
 });
 
 const FinancialOS = () => {
@@ -138,57 +146,58 @@ const FinancialOS = () => {
   const openEditExpense = (e: PersonalExpense) => {
     setExpenseForm({
       id: e.id, name: e.name, amount: String(e.amount),
-      is_recurring: e.is_recurring, category: e.category,
+      recurrence_type: e.recurrence_type ?? (e.is_recurring ? 'fixed_day' : 'none'),
+      recurrence_value: e.recurrence_value != null ? String(e.recurrence_value) : '1',
+      category: e.category,
       start_date: e.start_date ? e.start_date.slice(0, 10) : todayIso(),
     });
     setNewCategoryName('');
     setExpenseOpen(true);
   };
+  const parseRecValue = (rt: RecurrenceType, rv: string): number | undefined => {
+    if (rt === 'none') return undefined;
+    const n = parseInt(rv, 10);
+    if (!Number.isFinite(n)) return undefined;
+    if (rt === 'fixed_day') return Math.min(31, Math.max(1, n));
+    return Math.max(1, n);
+  };
   const submitExpense = async () => {
     const amount = Number(expenseForm.amount.replace(',', '.'));
     if (!expenseForm.name.trim() || !Number.isFinite(amount) || amount < 0) {
-      toast.error('Inserisci nome e importo validi');
-      return;
+      toast.error('Inserisci nome e importo validi'); return;
     }
-    if (!expenseForm.start_date) {
-      toast.error(expenseForm.is_recurring ? 'Seleziona il mese di inizio' : 'Seleziona la data della spesa');
-      return;
+    if (!expenseForm.start_date) { toast.error('Seleziona la data della spesa'); return; }
+    const recValue = parseRecValue(expenseForm.recurrence_type, expenseForm.recurrence_value);
+    if (expenseForm.recurrence_type !== 'none' && recValue === undefined) {
+      toast.error('Inserisci un valore valido per la ricorrenza'); return;
     }
-
-    // Risoluzione categoria: se "Altro..." selezionato, usa il nome libero
     let finalCategory = expenseForm.category;
     if (expenseForm.category === NEW_CATEGORY_SENTINEL) {
       const trimmed = newCategoryName.trim();
-      if (!trimmed) {
-        toast.error('Inserisci il nome della nuova categoria');
-        return;
-      }
+      if (!trimmed) { toast.error('Inserisci il nome della nuova categoria'); return; }
       finalCategory = trimmed;
-      // Crea la categoria se non esiste già (case-insensitive)
       const exists = allCategoryNames.some(n => n.toLowerCase() === trimmed.toLowerCase());
-      if (!exists) {
-        try { await addExpenseCategory(trimmed); } catch { /* silent */ }
-      }
+      if (!exists) { try { await addExpenseCategory(trimmed); } catch { /* silent */ } }
     }
-
     const startIso = dateInputToIso(expenseForm.start_date) ?? new Date().toISOString();
+    const isRec = expenseForm.recurrence_type !== 'none';
     try {
       if (expenseForm.id) {
         await updatePersonalExpense(expenseForm.id, {
-          name: expenseForm.name.trim(),
-          amount,
-          is_recurring: expenseForm.is_recurring,
-          category: finalCategory,
-          start_date: startIso,
+          name: expenseForm.name.trim(), amount,
+          is_recurring: isRec,
+          recurrence_type: expenseForm.recurrence_type,
+          recurrence_value: recValue,
+          category: finalCategory, start_date: startIso,
         });
         toast.success('Spesa aggiornata');
       } else {
         await addPersonalExpense({
-          name: expenseForm.name.trim(),
-          amount,
-          is_recurring: expenseForm.is_recurring,
-          category: finalCategory,
-          start_date: startIso,
+          name: expenseForm.name.trim(), amount,
+          is_recurring: isRec,
+          recurrence_type: expenseForm.recurrence_type,
+          recurrence_value: recValue,
+          category: finalCategory, start_date: startIso,
         });
         toast.success('Spesa aggiunta');
       }
@@ -270,6 +279,8 @@ const FinancialOS = () => {
       id: i.id, name: i.name, amount: String(i.amount),
       date: i.date ? i.date.slice(0, 10) : todayIso(),
       category: i.category || 'Altro',
+      recurrence_type: i.recurrence_type ?? 'none',
+      recurrence_value: i.recurrence_value != null ? String(i.recurrence_value) : '',
     });
     setNewIncomeCategoryName('');
     setIncomeOpen(true);
@@ -277,10 +288,13 @@ const FinancialOS = () => {
   const submitIncome = async () => {
     const amount = Number(incomeForm.amount.replace(',', '.'));
     if (!incomeForm.name.trim() || !Number.isFinite(amount) || amount <= 0) {
-      toast.error('Inserisci nome e importo validi');
-      return;
+      toast.error('Inserisci nome e importo validi'); return;
     }
     if (!incomeForm.date) { toast.error('Seleziona la data'); return; }
+    const recValue = parseRecValue(incomeForm.recurrence_type, incomeForm.recurrence_value);
+    if (incomeForm.recurrence_type !== 'none' && recValue === undefined) {
+      toast.error('Inserisci un valore valido per la ricorrenza'); return;
+    }
     let finalCategory = incomeForm.category;
     if (incomeForm.category === NEW_CATEGORY_SENTINEL) {
       const trimmed = newIncomeCategoryName.trim();
@@ -290,16 +304,16 @@ const FinancialOS = () => {
       if (!exists) { try { await addIncomeCategory(trimmed); } catch { /* silent */ } }
     }
     const dateIso = dateInputToIso(incomeForm.date) ?? new Date().toISOString();
+    const payload = {
+      name: incomeForm.name.trim(), amount, date: dateIso, category: finalCategory,
+      recurrence_type: incomeForm.recurrence_type, recurrence_value: recValue,
+    };
     try {
       if (incomeForm.id) {
-        await updatePersonalIncome(incomeForm.id, {
-          name: incomeForm.name.trim(), amount, date: dateIso, category: finalCategory,
-        });
+        await updatePersonalIncome(incomeForm.id, payload);
         toast.success('Ricavo aggiornato');
       } else {
-        await addPersonalIncome({
-          name: incomeForm.name.trim(), amount, date: dateIso, category: finalCategory,
-        });
+        await addPersonalIncome(payload);
         toast.success('Ricavo aggiunto');
       }
       setIncomeOpen(false);
@@ -315,7 +329,9 @@ const FinancialOS = () => {
   const openEditBiz = (e: BusinessExpense) => {
     setBizForm({
       id: e.id, name: e.name, amount: String(e.amount),
-      is_recurring: e.is_recurring, category: e.category,
+      recurrence_type: e.recurrence_type ?? (e.is_recurring ? 'fixed_day' : 'none'),
+      recurrence_value: e.recurrence_value != null ? String(e.recurrence_value) : '1',
+      category: e.category,
       start_date: e.start_date ? e.start_date.slice(0, 10) : todayIso(),
     });
     setNewBizCategoryName('');
@@ -327,6 +343,10 @@ const FinancialOS = () => {
       toast.error('Inserisci nome e importo validi'); return;
     }
     if (!bizForm.start_date) { toast.error('Seleziona la data'); return; }
+    const recValue = parseRecValue(bizForm.recurrence_type, bizForm.recurrence_value);
+    if (bizForm.recurrence_type !== 'none' && recValue === undefined) {
+      toast.error('Inserisci un valore valido per la ricorrenza'); return;
+    }
     let finalCategory = bizForm.category;
     if (bizForm.category === NEW_CATEGORY_SENTINEL) {
       const trimmed = newBizCategoryName.trim();
@@ -336,18 +356,20 @@ const FinancialOS = () => {
       if (!exists) { try { await addBusinessExpenseCategory(trimmed); } catch { /* silent */ } }
     }
     const startIso = dateInputToIso(bizForm.start_date) ?? new Date().toISOString();
+    const isRec = bizForm.recurrence_type !== 'none';
+    const payload = {
+      name: bizForm.name.trim(), amount,
+      is_recurring: isRec,
+      recurrence_type: bizForm.recurrence_type,
+      recurrence_value: recValue,
+      category: finalCategory, start_date: startIso,
+    };
     try {
       if (bizForm.id) {
-        await updateBusinessExpense(bizForm.id, {
-          name: bizForm.name.trim(), amount, is_recurring: bizForm.is_recurring,
-          category: finalCategory, start_date: startIso,
-        });
+        await updateBusinessExpense(bizForm.id, payload);
         toast.success('Spesa aziendale aggiornata');
       } else {
-        await addBusinessExpense({
-          name: bizForm.name.trim(), amount, is_recurring: bizForm.is_recurring,
-          category: finalCategory, start_date: startIso,
-        });
+        await addBusinessExpense(payload);
         toast.success('Spesa aziendale aggiunta');
       }
       setBizOpen(false);

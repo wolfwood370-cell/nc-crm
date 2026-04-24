@@ -136,11 +136,21 @@ export interface MonthlyBreakdown {
   net: number;
 }
 
+export type RecurrenceType = 'none' | 'fixed_day' | 'interval_days';
+export const RECURRENCE_TYPES: RecurrenceType[] = ['none', 'fixed_day', 'interval_days'];
+export const recurrenceTypeLabel: Record<RecurrenceType, string> = {
+  none: 'Occasionale / Una Tantum',
+  fixed_day: 'Giorno Fisso del Mese',
+  interval_days: 'Intervallo di Giorni',
+};
+
 export interface BusinessExpense {
   id: string;
   name: string;
   amount: number;
-  is_recurring: boolean;
+  is_recurring: boolean;        // legacy/derived: true se recurrence_type !== 'none'
+  recurrence_type: RecurrenceType;
+  recurrence_value?: number;    // day-of-month (1-31) o numero giorni
   category: string;
   created_at: string;
   start_date: string;
@@ -156,9 +166,12 @@ export interface PersonalIncome {
   id: string;
   name: string;
   amount: number;
-  date: string;          // ISO
+  date: string;          // ISO — start_date per le ricorrenti
   category: string;
   created_at: string;
+  recurrence_type: RecurrenceType;
+  recurrence_value?: number;
+  end_date?: string;
 }
 
 export const STANDARD_INCOME_CATEGORIES = [
@@ -178,11 +191,13 @@ export interface PersonalExpense {
   id: string;
   name: string;
   amount: number;
-  is_recurring: boolean;
+  is_recurring: boolean;        // legacy/derived
+  recurrence_type: RecurrenceType;
+  recurrence_value?: number;
   category: string;
   created_at: string;
-  start_date: string;       // ISO date — quando inizia (mese di inizio per ricorrenti / data esatta per una tantum)
-  end_date?: string;        // ISO date — quando termina (solo ricorrenti). Se assente la spesa è ancora attiva.
+  start_date: string;
+  end_date?: string;
 }
 
 export interface ExpenseCategory {
@@ -218,12 +233,14 @@ export interface LifeGoal {
 }
 
 export interface DynamicTarget {
-  monthlyGoalSaving: number;       // risparmio mensile per coprire l'obiettivo attivo
-  totalRecurringExpenses: number;  // somma spese personali ricorrenti
-  totalRecurringBusinessExpenses: number; // somma spese aziendali ricorrenti
-  totalNetNeeded: number;          // recurring (personali + business) + monthlyGoalSaving
-  dynamicGrossTarget: number;      // totalNetNeeded / (1 - 0.249)
-  monthsUntilDeadline: number;     // mesi residui all'obiettivo (>=1)
+  monthlyGoalSaving: number;            // risparmio mensile per l'obiettivo attivo
+  totalRecurringExpenses: number;       // baseline mese corrente: spese personali ricorrenti
+  totalRecurringBusinessExpenses: number;// baseline mese corrente: spese business ricorrenti
+  fixedBaseline: number;                // somma personali + business ricorrenti previsti questo mese
+  adaptiveBuffer: number;               // media 90gg delle spese "Occasionale"
+  totalNetNeeded: number;               // fixedBaseline + adaptiveBuffer + monthlyGoalSaving
+  dynamicGrossTarget: number;           // totalNetNeeded / (1 - TAX_RATE)
+  monthsUntilDeadline: number;          // mesi residui (>=1)
 }
 
 export const HISTORY_START_YEAR = 2026;
