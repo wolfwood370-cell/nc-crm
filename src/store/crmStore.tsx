@@ -226,7 +226,33 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
     },
   });
 
-  const { data: personalIncomes = [] } = useQuery({
+  const { data: businessExpenseCategories = [] } = useQuery({
+    queryKey: ['crm', 'business_expense_categories'],
+    queryFn: async (): Promise<BusinessExpenseCategory[]> => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any)
+        .from('business_expense_categories')
+        .select('*')
+        .order('name', { ascending: true });
+      if (error) throw error;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return (data as any[]).map(r => ({ id: r.id, name: r.name, created_at: r.created_at }));
+    },
+  });
+
+  const { data: incomeCategories = [] } = useQuery({
+    queryKey: ['crm', 'income_categories'],
+    queryFn: async (): Promise<IncomeCategory[]> => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any)
+        .from('income_categories')
+        .select('*')
+        .order('name', { ascending: true });
+      if (error) throw error;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return (data as any[]).map(r => ({ id: r.id, name: r.name, created_at: r.created_at }));
+    },
+  });
     queryKey: ['crm', 'personal_incomes'],
     queryFn: async (): Promise<PersonalIncome[]> => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
