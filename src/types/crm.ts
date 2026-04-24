@@ -233,12 +233,14 @@ export interface LifeGoal {
 }
 
 export interface DynamicTarget {
-  monthlyGoalSaving: number;       // risparmio mensile per coprire l'obiettivo attivo
-  totalRecurringExpenses: number;  // somma spese personali ricorrenti
-  totalRecurringBusinessExpenses: number; // somma spese aziendali ricorrenti
-  totalNetNeeded: number;          // recurring (personali + business) + monthlyGoalSaving
-  dynamicGrossTarget: number;      // totalNetNeeded / (1 - 0.249)
-  monthsUntilDeadline: number;     // mesi residui all'obiettivo (>=1)
+  monthlyGoalSaving: number;            // risparmio mensile per l'obiettivo attivo
+  totalRecurringExpenses: number;       // baseline mese corrente: spese personali ricorrenti
+  totalRecurringBusinessExpenses: number;// baseline mese corrente: spese business ricorrenti
+  fixedBaseline: number;                // somma personali + business ricorrenti previsti questo mese
+  adaptiveBuffer: number;               // media 90gg delle spese "Occasionale"
+  totalNetNeeded: number;               // fixedBaseline + adaptiveBuffer + monthlyGoalSaving
+  dynamicGrossTarget: number;           // totalNetNeeded / (1 - TAX_RATE)
+  monthsUntilDeadline: number;          // mesi residui (>=1)
 }
 
 export const HISTORY_START_YEAR = 2026;
