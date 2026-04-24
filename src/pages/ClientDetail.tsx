@@ -73,7 +73,7 @@ const ClientDetail = () => {
   const [monthlyValue, setMonthlyValue] = useState('');
   const [renewal, setRenewal] = useState('');
   const [lastContact, setLastContact] = useState('');
-  const [score, setScore] = useState<number>(50);
+  
   const [churn, setChurn] = useState<ChurnRisk>('Basso');
   const [birthDate, setBirthDate] = useState('');
   const [gender, setGender] = useState<Gender | ''>('');
