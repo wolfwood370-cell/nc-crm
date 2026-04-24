@@ -596,7 +596,38 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
     onSuccess: invalidateCategories,
   });
 
-  const current_monthly_revenue = useMemo(
+  // ---------- Personal Incomes CRUD ----------
+  const invalidateIncomes = () => queryClient.invalidateQueries({ queryKey: ['crm', 'personal_incomes'] });
+  const addIncomeMutation = useMutation({
+    mutationFn: async (i: Omit<PersonalIncome, 'id' | 'created_at'>) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any).from('personal_incomes').insert({
+        name: i.name,
+        amount: i.amount,
+        date: i.date,
+        category: i.category,
+      });
+      if (error) throw error;
+    },
+    onSuccess: invalidateIncomes,
+  });
+  const updateIncomeMutation = useMutation({
+    mutationFn: async ({ id, patch }: { id: string; patch: Partial<PersonalIncome> }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any).from('personal_incomes').update(patch).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: invalidateIncomes,
+  });
+  const deleteIncomeMutation = useMutation({
+    mutationFn: async (id: string) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any).from('personal_incomes').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: invalidateIncomes,
+  });
+
     () => clients.filter(c => c.pipeline_stage === 'Closed Won').reduce((s, c) => s + (c.monthly_value || 0), 0),
     [clients]
   );
