@@ -452,11 +452,63 @@ const FinancialOS = () => {
         )}
       </section>
 
-      {/* Math breakdown */}
+      {/* Personal Incomes */}
+      <section className="rounded-3xl border border-border bg-card p-5 shadow-card">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <ArrowDownToLine className="h-4 w-4 text-primary" />
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Ricavi Personali</h2>
+          </div>
+          <Button size="sm" variant="outline" onClick={openNewIncome} className="rounded-xl">
+            <Plus className="h-4 w-4 mr-1" />
+            Aggiungi
+          </Button>
+        </div>
+
+        <div className="mt-4 flex items-baseline justify-between">
+          <p className="text-xs text-muted-foreground">Totale del mese corrente</p>
+          <p className="text-2xl font-bold text-foreground">
+            <PrivacyMask>{formatEuro(monthlyIncomesTotal)}</PrivacyMask>
+          </p>
+        </div>
+
+        {personalIncomes.length === 0 ? (
+          <p className="mt-4 text-sm text-muted-foreground">
+            Aggiungi entrate non legate al business (es. regali, consulti extra, rimborsi). Verranno sommate al Cash Flow nei mesi storici.
+          </p>
+        ) : (
+          <ul className="mt-4 divide-y divide-border">
+            {personalIncomes.map(i => {
+              const dateLabel = new Date(i.date).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' });
+              return (
+                <li key={i.id} className="py-3 flex items-center justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-foreground truncate">{i.name}</p>
+                    <p className="text-[11px] text-muted-foreground">{i.category} · {dateLabel}</p>
+                  </div>
+                  <p className="text-sm font-bold tabular-nums text-foreground">
+                    +<PrivacyMask>{formatEuro(i.amount)}</PrivacyMask>
+                  </p>
+                  <div className="flex gap-1">
+                    <Button size="icon" variant="ghost" onClick={() => openEditIncome(i)}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button size="icon" variant="ghost" onClick={() => handleDeleteIncome(i.id)}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+
+      {/* Math breakdown — Target dinamico */}
       <section className="rounded-3xl border border-dashed border-border bg-secondary/40 p-5">
         <div className="flex items-center gap-2 mb-3">
           <TrendingUp className="h-4 w-4 text-primary" />
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Come si calcola</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Come si calcola il target</h2>
         </div>
         <div className="space-y-1.5 text-xs text-muted-foreground font-mono">
           <p>Spese ricorrenti: <PrivacyMask>{formatEuro(dynamicTarget.totalRecurringExpenses)}</PrivacyMask></p>
@@ -468,6 +520,41 @@ const FinancialOS = () => {
           </p>
         </div>
       </section>
+
+      {/* Waterfall legend */}
+      <section className="rounded-3xl border border-dashed border-border bg-secondary/40 p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <TrendingUp className="h-4 w-4 text-primary" />
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Waterfall: dal Lordo al Cash Flow Libero</h2>
+        </div>
+        <ol className="space-y-2 text-xs">
+          <li className="flex items-center gap-2">
+            <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: 'hsl(160 84% 39%)' }} />
+            <span><b className="text-foreground">Lordo</b> — incassi business (Saldato).</span>
+          </li>
+          <li className="flex items-center gap-2 pl-3">
+            <span className="text-muted-foreground">−</span>
+            <span><b className="text-foreground">Tasse ({Math.round(TAX_RATE * 100)}%)</b></span>
+          </li>
+          <li className="flex items-center gap-2">
+            <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: 'hsl(158 64% 52%)' }} />
+            <span><b className="text-foreground">Utile Aziendale</b> — quello che resta dell'attività.</span>
+          </li>
+          <li className="flex items-center gap-2 pl-3">
+            <span className="text-muted-foreground">−</span>
+            <span><b className="text-foreground">Spese Personali</b> (ricorrenti + una tantum del mese)</span>
+          </li>
+          <li className="flex items-center gap-2 pl-3">
+            <span className="text-muted-foreground">+</span>
+            <span><b className="text-foreground">Ricavi Personali</b> (regali, extra, rimborsi)</span>
+          </li>
+          <li className="flex items-center gap-2 pt-2 border-t border-border">
+            <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: 'hsl(221 83% 53%)' }} />
+            <span><b className="text-foreground">Cash Flow Libero</b> — i soldi davvero in tasca.</span>
+          </li>
+        </ol>
+      </section>
+
 
       {/* Expense Dialog */}
       <Dialog open={expenseOpen} onOpenChange={setExpenseOpen}>
