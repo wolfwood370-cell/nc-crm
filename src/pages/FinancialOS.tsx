@@ -327,18 +327,26 @@ const FinancialOS = () => {
       toast.error('Inserisci nome e importo validi'); return;
     }
     if (!bizForm.start_date) { toast.error('Seleziona la data'); return; }
+    let finalCategory = bizForm.category;
+    if (bizForm.category === NEW_CATEGORY_SENTINEL) {
+      const trimmed = newBizCategoryName.trim();
+      if (!trimmed) { toast.error('Inserisci il nome della nuova categoria'); return; }
+      finalCategory = trimmed;
+      const exists = allBizCategoryNames.some(n => n.toLowerCase() === trimmed.toLowerCase());
+      if (!exists) { try { await addBusinessExpenseCategory(trimmed); } catch { /* silent */ } }
+    }
     const startIso = dateInputToIso(bizForm.start_date) ?? new Date().toISOString();
     try {
       if (bizForm.id) {
         await updateBusinessExpense(bizForm.id, {
           name: bizForm.name.trim(), amount, is_recurring: bizForm.is_recurring,
-          category: bizForm.category, start_date: startIso,
+          category: finalCategory, start_date: startIso,
         });
         toast.success('Spesa aziendale aggiornata');
       } else {
         await addBusinessExpense({
           name: bizForm.name.trim(), amount, is_recurring: bizForm.is_recurring,
-          category: bizForm.category, start_date: startIso,
+          category: finalCategory, start_date: startIso,
         });
         toast.success('Spesa aziendale aggiunta');
       }
