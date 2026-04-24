@@ -6,7 +6,7 @@ import {
   ChurnRisk, Gender, Transaction, PaymentType, PaymentMethod,
   Service, MonthlyBreakdown, HISTORY_START_YEAR, HISTORY_START_MONTH,
   PersonalExpense, LifeGoal, DynamicTarget, ExpenseCategory, PersonalIncome,
-  BusinessExpense, BusinessExpenseCategory, IncomeCategory,
+  BusinessExpense, BusinessExpenseCategory, IncomeCategory, RecurrenceType,
 } from '@/types/crm';
 import { CrmContext, CrmContextValue } from './crmContext';
 
