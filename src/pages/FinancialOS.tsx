@@ -329,7 +329,9 @@ const FinancialOS = () => {
   const openEditBiz = (e: BusinessExpense) => {
     setBizForm({
       id: e.id, name: e.name, amount: String(e.amount),
-      is_recurring: e.is_recurring, category: e.category,
+      recurrence_type: e.recurrence_type ?? (e.is_recurring ? 'fixed_day' : 'none'),
+      recurrence_value: e.recurrence_value != null ? String(e.recurrence_value) : '1',
+      category: e.category,
       start_date: e.start_date ? e.start_date.slice(0, 10) : todayIso(),
     });
     setNewBizCategoryName('');
@@ -341,6 +343,10 @@ const FinancialOS = () => {
       toast.error('Inserisci nome e importo validi'); return;
     }
     if (!bizForm.start_date) { toast.error('Seleziona la data'); return; }
+    const recValue = parseRecValue(bizForm.recurrence_type, bizForm.recurrence_value);
+    if (bizForm.recurrence_type !== 'none' && recValue === undefined) {
+      toast.error('Inserisci un valore valido per la ricorrenza'); return;
+    }
     let finalCategory = bizForm.category;
     if (bizForm.category === NEW_CATEGORY_SENTINEL) {
       const trimmed = newBizCategoryName.trim();
@@ -350,18 +356,20 @@ const FinancialOS = () => {
       if (!exists) { try { await addBusinessExpenseCategory(trimmed); } catch { /* silent */ } }
     }
     const startIso = dateInputToIso(bizForm.start_date) ?? new Date().toISOString();
+    const isRec = bizForm.recurrence_type !== 'none';
+    const payload = {
+      name: bizForm.name.trim(), amount,
+      is_recurring: isRec,
+      recurrence_type: bizForm.recurrence_type,
+      recurrence_value: recValue,
+      category: finalCategory, start_date: startIso,
+    };
     try {
       if (bizForm.id) {
-        await updateBusinessExpense(bizForm.id, {
-          name: bizForm.name.trim(), amount, is_recurring: bizForm.is_recurring,
-          category: finalCategory, start_date: startIso,
-        });
+        await updateBusinessExpense(bizForm.id, payload);
         toast.success('Spesa aziendale aggiornata');
       } else {
-        await addBusinessExpense({
-          name: bizForm.name.trim(), amount, is_recurring: bizForm.is_recurring,
-          category: finalCategory, start_date: startIso,
-        });
+        await addBusinessExpense(payload);
         toast.success('Spesa aziendale aggiunta');
       }
       setBizOpen(false);
