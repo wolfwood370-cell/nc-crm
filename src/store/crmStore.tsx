@@ -1068,19 +1068,18 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
     }
 
     const sumMonthExpenses = (
-      list: { is_recurring: boolean; start_date: string; end_date?: string; amount: number }[],
+      list: RecurringRow[],
       y: number, m: number
     ): number => {
       const monthStart = new Date(y, m, 1);
       const monthEnd = new Date(y, m + 1, 0, 23, 59, 59, 999);
       let total = 0;
       for (const e of list) {
-        const start = new Date(e.start_date);
-        const end = e.end_date ? new Date(e.end_date) : null;
-        if (e.is_recurring) {
-          if (start <= monthEnd && (!end || end >= monthStart)) total += e.amount;
-        } else {
+        if (e.recurrence_type === 'none') {
+          const start = new Date(e.start_date);
           if (start >= monthStart && start <= monthEnd) total += e.amount;
+        } else {
+          total += e.amount * occurrencesInMonth(e, y, m);
         }
       }
       return total;
@@ -1091,8 +1090,15 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
       const monthEnd = new Date(y, m + 1, 0, 23, 59, 59, 999);
       let total = 0;
       for (const i of personalIncomes) {
-        const d = new Date(i.date);
-        if (d >= monthStart && d <= monthEnd) total += i.amount;
+        if (i.recurrence_type && i.recurrence_type !== 'none') {
+          total += i.amount * occurrencesInMonth(
+            { recurrence_type: i.recurrence_type, recurrence_value: i.recurrence_value, start_date: i.date, end_date: i.end_date, amount: i.amount },
+            y, m,
+          );
+        } else {
+          const d = new Date(i.date);
+          if (d >= monthStart && d <= monthEnd) total += i.amount;
+        }
       }
       return total;
     };
