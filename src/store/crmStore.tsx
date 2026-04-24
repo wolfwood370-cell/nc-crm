@@ -500,7 +500,47 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
   const updateExpenseMutation = useMutation({
     mutationFn: async ({ id, patch }: { id: string; patch: Partial<PersonalExpense> }) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any).from('personal_expenses').update(patch).eq('id', id);
+      const sb = supabase as any;
+
+      // Recupera la riga esistente per decidere se fare Copy-on-Write
+      const { data: existing, error: fetchErr } = await sb
+        .from('personal_expenses')
+        .select('*')
+        .eq('id', id)
+        .single();
+      if (fetchErr) throw fetchErr;
+
+      const isRecurring = Boolean(existing?.is_recurring);
+      const amountChanged =
+        patch.amount !== undefined && Number(patch.amount) !== Number(existing?.amount);
+
+      // SCD Type 2: se è ricorrente E l'importo cambia, chiudiamo la vecchia riga
+      // (end_date = oggi) e creiamo una nuova riga con il nuovo importo da oggi.
+      if (isRecurring && amountChanged) {
+        const todayIso = new Date().toISOString();
+
+        // 1) Chiudi storicamente la vecchia spesa
+        const { error: closeErr } = await sb
+          .from('personal_expenses')
+          .update({ end_date: todayIso })
+          .eq('id', id);
+        if (closeErr) throw closeErr;
+
+        // 2) Crea una nuova riga con i campi aggiornati (merge patch su existing)
+        const { error: insertErr } = await sb.from('personal_expenses').insert({
+          name: patch.name ?? existing.name,
+          amount: patch.amount,
+          is_recurring: true,
+          category: patch.category ?? existing.category,
+          start_date: todayIso,
+          end_date: null,
+        });
+        if (insertErr) throw insertErr;
+        return;
+      }
+
+      // Caso normale: aggiorno in place (rinomina, cambio categoria, ecc.)
+      const { error } = await sb.from('personal_expenses').update(patch).eq('id', id);
       if (error) throw error;
     },
     onSuccess: invalidateExpenses,
