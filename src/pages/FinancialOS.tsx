@@ -216,7 +216,53 @@ const FinancialOS = () => {
     catch { toast.error('Errore durante l\'eliminazione'); }
   };
 
-  return (
+  // ---------- Personal Incomes ----------
+  const incomeCategories = useMemo(() => Array.from(new Set([...STANDARD_INCOME_CATEGORIES])), []);
+  const monthlyIncomesTotal = useMemo(() => {
+    const now = new Date();
+    const y = now.getFullYear(); const m = now.getMonth();
+    return personalIncomes
+      .filter(i => { const d = new Date(i.date); return d.getFullYear() === y && d.getMonth() === m; })
+      .reduce((s, i) => s + i.amount, 0);
+  }, [personalIncomes]);
+
+  const openNewIncome = () => { setIncomeForm(emptyIncome()); setIncomeOpen(true); };
+  const openEditIncome = (i: PersonalIncome) => {
+    setIncomeForm({
+      id: i.id, name: i.name, amount: String(i.amount),
+      date: i.date ? i.date.slice(0, 10) : todayIso(),
+      category: i.category || 'Altro',
+    });
+    setIncomeOpen(true);
+  };
+  const submitIncome = async () => {
+    const amount = Number(incomeForm.amount.replace(',', '.'));
+    if (!incomeForm.name.trim() || !Number.isFinite(amount) || amount <= 0) {
+      toast.error('Inserisci nome e importo validi');
+      return;
+    }
+    if (!incomeForm.date) { toast.error('Seleziona la data'); return; }
+    const dateIso = dateInputToIso(incomeForm.date) ?? new Date().toISOString();
+    try {
+      if (incomeForm.id) {
+        await updatePersonalIncome(incomeForm.id, {
+          name: incomeForm.name.trim(), amount, date: dateIso, category: incomeForm.category,
+        });
+        toast.success('Ricavo aggiornato');
+      } else {
+        await addPersonalIncome({
+          name: incomeForm.name.trim(), amount, date: dateIso, category: incomeForm.category,
+        });
+        toast.success('Ricavo aggiunto');
+      }
+      setIncomeOpen(false);
+    } catch { toast.error('Errore durante il salvataggio'); }
+  };
+  const handleDeleteIncome = async (id: string) => {
+    try { await deletePersonalIncome(id); toast.success('Ricavo eliminato'); }
+    catch { toast.error('Errore durante l\'eliminazione'); }
+  };
+
     <div className="px-4 md:px-0 pt-6 pb-24 md:pb-8 space-y-6 animate-fade-in">
       <header>
         <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Life · Finance OS</p>
