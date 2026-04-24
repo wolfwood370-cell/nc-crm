@@ -1115,18 +1115,36 @@ const FinancialOS = () => {
                 />
               </div>
               <div>
-                <Label htmlFor="biz-cat">Categoria</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="biz-cat">Categoria</Label>
+                  <button
+                    type="button"
+                    onClick={() => { setManageTab('business'); setManageCategoriesOpen(true); }}
+                    className="text-[10px] font-semibold uppercase tracking-wider text-primary hover:underline inline-flex items-center gap-1"
+                  >
+                    <Settings2 className="h-3 w-3" /> Gestisci
+                  </button>
+                </div>
                 <Select
                   value={bizForm.category}
                   onValueChange={v => setBizForm(s => ({ ...s, category: v }))}
                 >
                   <SelectTrigger id="biz-cat"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {STANDARD_BUSINESS_EXPENSE_CATEGORIES.map(c => (
+                    {allBizCategoryNames.map(c => (
                       <SelectItem key={c} value={c}>{c}</SelectItem>
                     ))}
+                    <SelectItem value={NEW_CATEGORY_SENTINEL}>+ Altro...</SelectItem>
                   </SelectContent>
                 </Select>
+                {bizForm.category === NEW_CATEGORY_SENTINEL && (
+                  <Input
+                    className="mt-2"
+                    placeholder="Nome nuova categoria"
+                    value={newBizCategoryName}
+                    onChange={e => setNewBizCategoryName(e.target.value)}
+                  />
+                )}
               </div>
             </div>
             <div className="flex items-center justify-between rounded-xl border border-border p-3">
