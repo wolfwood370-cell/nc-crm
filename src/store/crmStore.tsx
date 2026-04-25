@@ -1091,7 +1091,7 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
       for (const i of personalIncomes) {
         if (i.recurrence_type && i.recurrence_type !== 'none') {
           total += i.amount * occurrencesInMonth(
-            { recurrence_type: i.recurrence_type, recurrence_value: i.recurrence_value, start_date: i.date, end_date: i.end_date, amount: i.amount },
+            { recurrence_type: i.recurrence_type, recurrence_value: i.recurrence_value, start_date: i.date, end_date: undefined, amount: i.amount },
             y, m,
           );
         } else {
