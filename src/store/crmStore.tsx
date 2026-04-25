@@ -724,7 +724,6 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
         category: i.category,
         recurrence_type: i.recurrence_type ?? 'none',
         recurrence_value: i.recurrence_value ?? null,
-        end_date: i.end_date ?? null,
       });
       if (error) throw error;
     },
