@@ -16,7 +16,8 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Plus, Trash2, Pencil, Target, Wallet, TrendingUp, Sparkles, Ban, Settings2, Check, X, ArrowDownToLine, Briefcase } from 'lucide-react';
+import { Plus, Trash2, Pencil, Target, Wallet, TrendingUp, Sparkles, Ban, Settings2, Check, X, ArrowDownToLine, Briefcase, ChevronDown } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { PrivacyMask } from '@/components/crm/PrivacyMask';
 import { toast } from 'sonner';
 import { todayIso, dateInputToIso } from '@/lib/date';
@@ -108,6 +109,24 @@ const FinancialOS = () => {
   const [bizOpen, setBizOpen] = useState(false);
   const [bizForm, setBizForm] = useState<BizExpenseFormState>(emptyBizExpense());
   const [newBizCategoryName, setNewBizCategoryName] = useState('');
+  const [openBizCats, setOpenBizCats] = useState<Record<string, boolean>>({});
+  const [openPersCats, setOpenPersCats] = useState<Record<string, boolean>>({});
+  const [openIncomeCats, setOpenIncomeCats] = useState<Record<string, boolean>>({});
+
+  const groupBy = <T extends { category: string }>(items: T[]): Array<[string, T[]]> => {
+    const map = new Map<string, T[]>();
+    for (const it of items) {
+      const k = it.category || 'Altro';
+      const arr = map.get(k) ?? [];
+      arr.push(it);
+      map.set(k, arr);
+    }
+    return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0], 'it'));
+  };
+  const groupedBiz = useMemo(() => groupBy(businessExpenses), [businessExpenses]);
+  const groupedPers = useMemo(() => groupBy(personalExpenses), [personalExpenses]);
+  const groupedIncomes = useMemo(() => groupBy(personalIncomes), [personalIncomes]);
+  const sumAmount = <T extends { amount: number }>(items: T[]) => items.reduce((s, x) => s + (x.amount || 0), 0);
 
   // Unione categorie standard + custom (deduplicate case-insensitive)
   const allCategoryNames = useMemo(() => {
@@ -572,50 +591,66 @@ const FinancialOS = () => {
             Aggiungi i costi del business (affitto studio, marketing, software, attrezzatura...) per separare il vero utile aziendale dal tuo cash flow personale.
           </p>
         ) : (
-          <ul className="mt-4 divide-y divide-border">
-            {businessExpenses.map(e => {
-              const ended = !!e.end_date;
-              const startLabel = e.start_date
-                ? new Date(e.start_date).toLocaleDateString('it-IT', { month: 'short', year: 'numeric' })
-                : '—';
-              const endLabel = e.end_date
-                ? new Date(e.end_date).toLocaleDateString('it-IT', { month: 'short', year: 'numeric' })
-                : null;
+          <div className="mt-4 space-y-2">
+            {groupedBiz.map(([cat, items]) => {
+              const isOpen = openBizCats[cat] ?? false;
+              const catTotal = sumAmount(items.filter(x => !x.end_date));
               return (
-                <li key={e.id} className="py-3 flex items-center justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-foreground truncate">
-                      {e.name}
-                      {ended && <span className="ml-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">· terminata</span>}
-                    </p>
-                    <p className="text-[11px] text-muted-foreground">
-                      {e.category} · {e.is_recurring ? `Ricorrente da ${startLabel}${endLabel ? ` a ${endLabel}` : ''}` : `Una tantum · ${startLabel}`}
-                    </p>
-                  </div>
-                  <p className={`text-sm font-bold tabular-nums ${e.is_recurring && !ended ? 'text-foreground' : 'text-muted-foreground'}`}>
-                    <PrivacyMask>{formatEuro(e.amount)}</PrivacyMask>
-                  </p>
-                  <div className="flex gap-1">
-                    {e.is_recurring && !ended && (
-                      <Button size="icon" variant="ghost" onClick={() => handleEndBiz(e.id)} title="Termina spesa ricorrente">
-                        <Ban className="h-4 w-4 text-warning" />
-                      </Button>
-                    )}
-                    <Button size="icon" variant="ghost" onClick={() => openEditBiz(e)}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button size="icon" variant="ghost" onClick={() => handleDeleteBiz(e.id)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                </li>
+                <Collapsible key={cat} open={isOpen} onOpenChange={(o) => setOpenBizCats(s => ({ ...s, [cat]: o }))}>
+                  <CollapsibleTrigger className="w-full flex items-center justify-between gap-3 rounded-xl border border-border bg-secondary/40 px-3 py-2 hover:bg-secondary transition-colors">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isOpen ? '' : '-rotate-90'}`} />
+                      <span className="text-sm font-semibold text-foreground truncate">{cat}</span>
+                      <span className="text-[11px] text-muted-foreground">({items.length})</span>
+                    </div>
+                    <span className="text-sm font-bold tabular-nums text-foreground">
+                      <PrivacyMask>{formatEuro(catTotal)}</PrivacyMask>
+                    </span>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <ul className="mt-1 ml-2 divide-y divide-border border-l border-border pl-3">
+                      {items.map(e => {
+                        const ended = !!e.end_date;
+                        const startLabel = e.start_date ? new Date(e.start_date).toLocaleDateString('it-IT', { month: 'short', year: 'numeric' }) : '—';
+                        const endLabel = e.end_date ? new Date(e.end_date).toLocaleDateString('it-IT', { month: 'short', year: 'numeric' }) : null;
+                        return (
+                          <li key={e.id} className="py-2 flex items-center justify-between gap-3">
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium text-foreground truncate">
+                                {e.name}
+                                {ended && <span className="ml-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">· terminata</span>}
+                              </p>
+                              <p className="text-[11px] text-muted-foreground">
+                                {e.is_recurring ? `Ricorrente da ${startLabel}${endLabel ? ` a ${endLabel}` : ''}` : `Una tantum · ${startLabel}`}
+                              </p>
+                            </div>
+                            <p className={`text-sm font-bold tabular-nums ${e.is_recurring && !ended ? 'text-foreground' : 'text-muted-foreground'}`}>
+                              <PrivacyMask>{formatEuro(e.amount)}</PrivacyMask>
+                            </p>
+                            <div className="flex gap-1">
+                              {e.is_recurring && !ended && (
+                                <Button size="icon" variant="ghost" onClick={() => handleEndBiz(e.id)} title="Termina spesa ricorrente">
+                                  <Ban className="h-4 w-4 text-warning" />
+                                </Button>
+                              )}
+                              <Button size="icon" variant="ghost" onClick={() => openEditBiz(e)}>
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button size="icon" variant="ghost" onClick={() => handleDeleteBiz(e.id)}>
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </CollapsibleContent>
+                </Collapsible>
               );
             })}
-          </ul>
+          </div>
         )}
       </section>
-
-      {/* Personal Expenses */}
       <section className="rounded-3xl border border-border bg-card p-5 shadow-card">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -638,51 +673,64 @@ const FinancialOS = () => {
         {personalExpenses.length === 0 ? (
           <p className="mt-4 text-sm text-muted-foreground">Aggiungi le tue spese fisse (Netflix, affitto, abbonamenti...) per calcolare il target reale.</p>
         ) : (
-          <ul className="mt-4 divide-y divide-border">
-            {personalExpenses.map(e => {
-              const ended = !!e.end_date;
-              const startLabel = e.start_date
-                ? new Date(e.start_date).toLocaleDateString('it-IT', { month: 'short', year: 'numeric' })
-                : '—';
-              const endLabel = e.end_date
-                ? new Date(e.end_date).toLocaleDateString('it-IT', { month: 'short', year: 'numeric' })
-                : null;
+          <div className="mt-4 space-y-2">
+            {groupedPers.map(([cat, items]) => {
+              const isOpen = openPersCats[cat] ?? false;
+              const catTotal = sumAmount(items.filter(x => !x.end_date));
               return (
-                <li key={e.id} className="py-3 flex items-center justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-foreground truncate">
-                      {e.name}
-                      {ended && <span className="ml-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">· terminata</span>}
-                    </p>
-                    <p className="text-[11px] text-muted-foreground">
-                      {e.category} · {e.is_recurring ? `Ricorrente da ${startLabel}${endLabel ? ` a ${endLabel}` : ''}` : `Una tantum · ${startLabel}`}
-                    </p>
-                  </div>
-                  <p className={`text-sm font-bold tabular-nums ${e.is_recurring && !ended ? 'text-foreground' : 'text-muted-foreground'}`}>
-                    <PrivacyMask>{formatEuro(e.amount)}</PrivacyMask>
-                  </p>
-                  <div className="flex gap-1">
-                    {e.is_recurring && !ended && (
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => handleEndExpense(e.id)}
-                        title="Termina spesa ricorrente"
-                      >
-                        <Ban className="h-4 w-4 text-warning" />
-                      </Button>
-                    )}
-                    <Button size="icon" variant="ghost" onClick={() => openEditExpense(e)}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button size="icon" variant="ghost" onClick={() => handleDeleteExpense(e.id)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                </li>
+                <Collapsible key={cat} open={isOpen} onOpenChange={(o) => setOpenPersCats(s => ({ ...s, [cat]: o }))}>
+                  <CollapsibleTrigger className="w-full flex items-center justify-between gap-3 rounded-xl border border-border bg-secondary/40 px-3 py-2 hover:bg-secondary transition-colors">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isOpen ? '' : '-rotate-90'}`} />
+                      <span className="text-sm font-semibold text-foreground truncate">{cat}</span>
+                      <span className="text-[11px] text-muted-foreground">({items.length})</span>
+                    </div>
+                    <span className="text-sm font-bold tabular-nums text-foreground">
+                      <PrivacyMask>{formatEuro(catTotal)}</PrivacyMask>
+                    </span>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <ul className="mt-1 ml-2 divide-y divide-border border-l border-border pl-3">
+                      {items.map(e => {
+                        const ended = !!e.end_date;
+                        const startLabel = e.start_date ? new Date(e.start_date).toLocaleDateString('it-IT', { month: 'short', year: 'numeric' }) : '—';
+                        const endLabel = e.end_date ? new Date(e.end_date).toLocaleDateString('it-IT', { month: 'short', year: 'numeric' }) : null;
+                        return (
+                          <li key={e.id} className="py-2 flex items-center justify-between gap-3">
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium text-foreground truncate">
+                                {e.name}
+                                {ended && <span className="ml-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">· terminata</span>}
+                              </p>
+                              <p className="text-[11px] text-muted-foreground">
+                                {e.is_recurring ? `Ricorrente da ${startLabel}${endLabel ? ` a ${endLabel}` : ''}` : `Una tantum · ${startLabel}`}
+                              </p>
+                            </div>
+                            <p className={`text-sm font-bold tabular-nums ${e.is_recurring && !ended ? 'text-foreground' : 'text-muted-foreground'}`}>
+                              <PrivacyMask>{formatEuro(e.amount)}</PrivacyMask>
+                            </p>
+                            <div className="flex gap-1">
+                              {e.is_recurring && !ended && (
+                                <Button size="icon" variant="ghost" onClick={() => handleEndExpense(e.id)} title="Termina spesa ricorrente">
+                                  <Ban className="h-4 w-4 text-warning" />
+                                </Button>
+                              )}
+                              <Button size="icon" variant="ghost" onClick={() => openEditExpense(e)}>
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button size="icon" variant="ghost" onClick={() => handleDeleteExpense(e.id)}>
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </CollapsibleContent>
+                </Collapsible>
               );
             })}
-          </ul>
+          </div>
         )}
       </section>
 
@@ -711,30 +759,52 @@ const FinancialOS = () => {
             Aggiungi entrate non legate al business (es. regali, consulti extra, rimborsi). Verranno sommate al Cash Flow nei mesi storici.
           </p>
         ) : (
-          <ul className="mt-4 divide-y divide-border">
-            {personalIncomes.map(i => {
-              const dateLabel = new Date(i.date).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' });
+          <div className="mt-4 space-y-2">
+            {groupedIncomes.map(([cat, items]) => {
+              const isOpen = openIncomeCats[cat] ?? false;
+              const catTotal = sumAmount(items);
               return (
-                <li key={i.id} className="py-3 flex items-center justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-foreground truncate">{i.name}</p>
-                    <p className="text-[11px] text-muted-foreground">{i.category} · {dateLabel}</p>
-                  </div>
-                  <p className="text-sm font-bold tabular-nums text-foreground">
-                    +<PrivacyMask>{formatEuro(i.amount)}</PrivacyMask>
-                  </p>
-                  <div className="flex gap-1">
-                    <Button size="icon" variant="ghost" onClick={() => openEditIncome(i)}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button size="icon" variant="ghost" onClick={() => handleDeleteIncome(i.id)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                </li>
+                <Collapsible key={cat} open={isOpen} onOpenChange={(o) => setOpenIncomeCats(s => ({ ...s, [cat]: o }))}>
+                  <CollapsibleTrigger className="w-full flex items-center justify-between gap-3 rounded-xl border border-border bg-secondary/40 px-3 py-2 hover:bg-secondary transition-colors">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isOpen ? '' : '-rotate-90'}`} />
+                      <span className="text-sm font-semibold text-foreground truncate">{cat}</span>
+                      <span className="text-[11px] text-muted-foreground">({items.length})</span>
+                    </div>
+                    <span className="text-sm font-bold tabular-nums text-foreground">
+                      +<PrivacyMask>{formatEuro(catTotal)}</PrivacyMask>
+                    </span>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <ul className="mt-1 ml-2 divide-y divide-border border-l border-border pl-3">
+                      {items.map(i => {
+                        const dateLabel = new Date(i.date).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' });
+                        return (
+                          <li key={i.id} className="py-2 flex items-center justify-between gap-3">
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium text-foreground truncate">{i.name}</p>
+                              <p className="text-[11px] text-muted-foreground">{dateLabel}</p>
+                            </div>
+                            <p className="text-sm font-bold tabular-nums text-foreground">
+                              +<PrivacyMask>{formatEuro(i.amount)}</PrivacyMask>
+                            </p>
+                            <div className="flex gap-1">
+                              <Button size="icon" variant="ghost" onClick={() => openEditIncome(i)}>
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button size="icon" variant="ghost" onClick={() => handleDeleteIncome(i.id)}>
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </CollapsibleContent>
+                </Collapsible>
               );
             })}
-          </ul>
+          </div>
         )}
       </section>
 
