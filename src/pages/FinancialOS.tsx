@@ -759,30 +759,52 @@ const FinancialOS = () => {
             Aggiungi entrate non legate al business (es. regali, consulti extra, rimborsi). Verranno sommate al Cash Flow nei mesi storici.
           </p>
         ) : (
-          <ul className="mt-4 divide-y divide-border">
-            {personalIncomes.map(i => {
-              const dateLabel = new Date(i.date).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' });
+          <div className="mt-4 space-y-2">
+            {groupedIncomes.map(([cat, items]) => {
+              const isOpen = openIncomeCats[cat] ?? false;
+              const catTotal = sumAmount(items);
               return (
-                <li key={i.id} className="py-3 flex items-center justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-foreground truncate">{i.name}</p>
-                    <p className="text-[11px] text-muted-foreground">{i.category} · {dateLabel}</p>
-                  </div>
-                  <p className="text-sm font-bold tabular-nums text-foreground">
-                    +<PrivacyMask>{formatEuro(i.amount)}</PrivacyMask>
-                  </p>
-                  <div className="flex gap-1">
-                    <Button size="icon" variant="ghost" onClick={() => openEditIncome(i)}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button size="icon" variant="ghost" onClick={() => handleDeleteIncome(i.id)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                </li>
+                <Collapsible key={cat} open={isOpen} onOpenChange={(o) => setOpenIncomeCats(s => ({ ...s, [cat]: o }))}>
+                  <CollapsibleTrigger className="w-full flex items-center justify-between gap-3 rounded-xl border border-border bg-secondary/40 px-3 py-2 hover:bg-secondary transition-colors">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isOpen ? '' : '-rotate-90'}`} />
+                      <span className="text-sm font-semibold text-foreground truncate">{cat}</span>
+                      <span className="text-[11px] text-muted-foreground">({items.length})</span>
+                    </div>
+                    <span className="text-sm font-bold tabular-nums text-foreground">
+                      +<PrivacyMask>{formatEuro(catTotal)}</PrivacyMask>
+                    </span>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <ul className="mt-1 ml-2 divide-y divide-border border-l border-border pl-3">
+                      {items.map(i => {
+                        const dateLabel = new Date(i.date).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' });
+                        return (
+                          <li key={i.id} className="py-2 flex items-center justify-between gap-3">
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium text-foreground truncate">{i.name}</p>
+                              <p className="text-[11px] text-muted-foreground">{dateLabel}</p>
+                            </div>
+                            <p className="text-sm font-bold tabular-nums text-foreground">
+                              +<PrivacyMask>{formatEuro(i.amount)}</PrivacyMask>
+                            </p>
+                            <div className="flex gap-1">
+                              <Button size="icon" variant="ghost" onClick={() => openEditIncome(i)}>
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button size="icon" variant="ghost" onClick={() => handleDeleteIncome(i.id)}>
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </CollapsibleContent>
+                </Collapsible>
               );
             })}
-          </ul>
+          </div>
         )}
       </section>
 
