@@ -171,7 +171,6 @@ export interface PersonalIncome {
   created_at: string;
   recurrence_type: RecurrenceType;
   recurrence_value?: number;
-  end_date?: string;
 }
 
 export const STANDARD_INCOME_CATEGORIES = [
