@@ -398,6 +398,15 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'income_categories' }, () => {
         queryClient.invalidateQueries({ queryKey: ['crm', 'income_categories'] });
       })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'financial_movements' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['crm', 'movements'] });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bank_accounts' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['crm', 'bank_accounts'] });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['crm', 'categories'] });
+      })
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
