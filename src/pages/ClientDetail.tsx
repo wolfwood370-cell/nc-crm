@@ -933,7 +933,7 @@ const ClientDetail = () => {
                     <div className="space-y-2 pt-2">
                       <div className="flex items-center justify-between gap-2">
                         <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground truncate">
-                          Pagamenti per <span className="text-foreground">{client.service_sold ?? 'Contratto'}</span>
+                          Piano Pagamenti{client.service_sold ? <> · <span className="text-foreground normal-case tracking-normal">{client.service_sold}</span></> : null}
                         </p>
                         {totalPending > 0 && (
                           <p className="text-[10px] font-semibold text-warning shrink-0">
