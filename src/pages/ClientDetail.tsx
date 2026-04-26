@@ -199,6 +199,14 @@ const ClientDetail = () => {
     }
   }, [client]);
 
+  // SMART AMOUNT: prefill remaining balance once form is initialized
+  useEffect(() => {
+    if (formInitialized && !payAmount && contractRemaining > 0) {
+      setPayAmount(String(contractRemaining));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formInitialized, contractRemaining]);
+
   if (isLoading) {
     return <ClientDetailSkeleton />;
   }
