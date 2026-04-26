@@ -626,6 +626,9 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
       if (patch.notes !== undefined) dbPatch.notes = patch.notes;
       if (patch.recurrence_type !== undefined) dbPatch.recurrence_type = patch.recurrence_type;
       if (patch.recurrence_value !== undefined) dbPatch.recurrence_value = patch.recurrence_value ?? null;
+      // Phase 38 fix: keep contract context editable on the ledger entry too
+      if (patch.service_sold !== undefined) dbPatch.service_sold = patch.service_sold ?? null;
+      if (patch.actual_price !== undefined) dbPatch.actual_price = patch.actual_price ?? null;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await (supabase as any).from('financial_movements').update(dbPatch).eq('id', id);
       if (error) throw error;
