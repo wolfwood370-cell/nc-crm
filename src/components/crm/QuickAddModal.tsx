@@ -170,6 +170,91 @@ export const QuickAddModal = ({ open, onOpenChange }: Props) => {
             </ToggleGroup>
           </div>
 
+          {stage === 'Closed Won' && (
+            <div className="space-y-3 rounded-xl border border-border bg-secondary/30 p-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <Sparkles className="h-3 w-3" /> Servizio Venduto
+                  </Label>
+                  <Select
+                    value={serviceSold}
+                    onValueChange={(v) => {
+                      const next = v as ServiceType;
+                      setServiceSold(next);
+                      if (CUSTOM_PRICE_SERVICES.includes(next)) setActualPrice('');
+                    }}
+                  >
+                    <SelectTrigger className="h-12 rounded-xl bg-card border border-border text-sm font-semibold">
+                      <SelectValue placeholder="Seleziona servizio…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SERVICE_GROUPS.map(group => (
+                        <SelectGroup key={group.label}>
+                          <SelectLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">{group.label}</SelectLabel>
+                          {group.items.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                        </SelectGroup>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <Euro className="h-3 w-3" /> Valore Contratto (€)
+                  </Label>
+                  <Input
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    step="0.01"
+                    value={actualPrice}
+                    onChange={(e) => setActualPrice(e.target.value)}
+                    placeholder="es. 1250"
+                    className="h-12 rounded-xl bg-card border border-border text-base font-semibold"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <CalendarClock className="h-3 w-3" /> Inizio Percorso
+                  </Label>
+                  <Input
+                    type="date"
+                    value={trainingStart}
+                    onChange={(e) => setTrainingStart(e.target.value)}
+                    className="h-12 rounded-xl bg-card border border-border text-sm font-semibold"
+                  />
+                </div>
+
+                {serviceSold && SHORT_DURATION_SERVICES.includes(serviceSold) ? (
+                  <div className="space-y-1.5">
+                    <Label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                      <CalendarClock className="h-3 w-3" /> Durata Percorso
+                    </Label>
+                    <div className="h-12 rounded-xl bg-primary/5 border border-primary/20 flex items-center px-3 text-sm font-semibold text-foreground">
+                      28 giorni (auto)
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    <Label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                      <CalendarClock className="h-3 w-3" /> Durata Percorso
+                    </Label>
+                    <Select value={String(contractDuration)} onValueChange={(v) => setContractDuration(Number(v) as ContractDurationMonths)}>
+                      <SelectTrigger className="h-12 rounded-xl bg-card border border-border text-sm font-semibold">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CONTRACT_DURATION_OPTIONS.map(o => <SelectItem key={o.value} value={String(o.value)}>{o.label}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           <label className="flex items-start gap-3 rounded-xl border border-border bg-secondary/40 p-3 cursor-pointer hover:bg-secondary/60 transition-smooth">
             <Checkbox
               checked={gdprConsent}
