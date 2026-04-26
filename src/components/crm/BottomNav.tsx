@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { Home, KanbanSquare, Users, Plus, Target, Menu as MenuIcon, LogOut, Dumbbell, BarChart3, Brain, BrainCircuit } from 'lucide-react';
+import { Home, KanbanSquare, Users, Plus, Target, Menu as MenuIcon, LogOut, BarChart3, Brain, BrainCircuit } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PrivacyToggle } from '@/components/crm/PrivacyToggle';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import logoIcon from '@/assets/logo-icon.png';
 
 interface Props {
   onFabClick: () => void;
@@ -98,8 +99,8 @@ export const BottomNav = ({ onFabClick }: Props) => {
             <SheetContent side="right" className="w-[80vw] sm:w-[350px] flex flex-col p-0">
               <SheetHeader className="px-5 py-5 border-b border-border">
                 <div className="flex items-center gap-2">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-primary shadow-glow">
-                    <Dumbbell className="h-5 w-5 text-primary-foreground" strokeWidth={2.5} />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl overflow-hidden shadow-glow">
+                    <img src={logoIcon} alt="Life & Business OS" width={40} height={40} className="h-10 w-10 object-cover" />
                   </div>
                   <div className="text-left">
                     <SheetTitle className="text-sm font-bold leading-tight">Life & Business OS</SheetTitle>
