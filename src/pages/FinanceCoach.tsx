@@ -391,6 +391,49 @@ export default function FinanceCoach() {
             )}
           </div>
 
+          {/* Manual overrides — fall back to historical snapshot when empty */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label htmlFor="ticket-override" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Ticket medio (€)
+              </label>
+              <Input
+                id="ticket-override"
+                type="number"
+                inputMode="decimal"
+                min="0"
+                step="1"
+                placeholder={snapshot.avgTicket > 0 ? `Storico: ${Math.round(snapshot.avgTicket)}` : 'Es. 1200'}
+                value={avgTicketOverride}
+                onChange={(e) => setAvgTicketOverride(e.target.value)}
+                className="h-10 rounded-lg bg-secondary/40 border-border text-sm tabular-nums"
+              />
+              <p className="text-[10px] text-muted-foreground">
+                {sim.ticketIsManual ? 'Override manuale attivo' : 'Sto usando il valore storico (90 giorni)'}
+              </p>
+            </div>
+            <div className="space-y-1.5">
+              <label htmlFor="winrate-override" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Win rate atteso (%)
+              </label>
+              <Input
+                id="winrate-override"
+                type="number"
+                inputMode="decimal"
+                min="0"
+                max="100"
+                step="1"
+                placeholder={snapshot.winRate > 0 ? `Storico: ${(snapshot.winRate * 100).toFixed(0)}` : 'Es. 30'}
+                value={winRateOverride}
+                onChange={(e) => setWinRateOverride(e.target.value)}
+                className="h-10 rounded-lg bg-secondary/40 border-border text-sm tabular-nums"
+              />
+              <p className="text-[10px] text-muted-foreground">
+                {sim.winRateIsManual ? 'Override manuale attivo' : 'Sto usando il valore storico (90 giorni)'}
+              </p>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <SimMetric
               label="Nuovo Target Netto/Mese"
@@ -404,14 +447,22 @@ export default function FinanceCoach() {
             />
             <SimMetric
               label="Clienti da chiudere/mese"
-              value={sim.requiredClientsPerMonth.toFixed(1)}
-              hint={snapshot.avgTicket > 0 ? `Su ticket medio ${formatEuro(snapshot.avgTicket)}` : 'Nessun ticket medio storico'}
+              value={sim.effectiveTicket > 0 ? sim.requiredClientsPerMonth.toFixed(1) : 'N/A'}
+              hint={
+                sim.effectiveTicket > 0
+                  ? `Su ticket medio ${formatEuro(sim.effectiveTicket)}${sim.ticketIsManual ? ' (manuale)' : ''}`
+                  : 'Inserisci un ticket medio per calcolare'
+              }
               danger={sim.isUnrealistic}
             />
             <SimMetric
               label="Nuovi Lead Necessari/mese"
-              value={sim.requiredLeadsPerMonth > 0 ? sim.requiredLeadsPerMonth.toFixed(1) : '—'}
-              hint={snapshot.winRate > 0 ? `Win rate attuale ${formatPct(snapshot.winRate)}` : 'Nessuno storico di chiusure'}
+              value={sim.requiredLeadsPerMonth > 0 ? sim.requiredLeadsPerMonth.toFixed(1) : 'N/A'}
+              hint={
+                sim.effectiveWinRate > 0
+                  ? `Win rate ${formatPct(sim.effectiveWinRate)}${sim.winRateIsManual ? ' (manuale)' : ''}`
+                  : 'Inserisci un win rate per calcolare'
+              }
               danger={sim.isUnrealistic}
             />
           </div>
