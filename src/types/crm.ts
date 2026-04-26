@@ -257,7 +257,14 @@ export interface BankAccount {
 
 export type MovementType = 'credit' | 'debit';
 export type MovementClassification = 'personal' | 'business';
-export type MovementSource = 'manual' | 'import' | 'migrated';
+export type MovementSource = 'manual' | 'import' | 'migrated' | 'transaction';
+
+export type MovementRecurrenceType = 'none' | 'weekly' | 'fixed_day';
+export const movementRecurrenceLabel: Record<MovementRecurrenceType, string> = {
+  none: 'Una tantum',
+  weekly: 'Ogni X settimane',
+  fixed_day: 'Giorno fisso del mese',
+};
 
 export interface FinancialMovement {
   id: string;
@@ -274,6 +281,8 @@ export interface FinancialMovement {
   source: MovementSource;
   external_ref?: string;
   notes?: string;
+  recurrence_type: MovementRecurrenceType;
+  recurrence_value?: number;
   created_at: string;
 }
 
