@@ -11,8 +11,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import { useState } from 'react';
+
+const daysUntil = (iso?: string): number | null => {
+  if (!iso) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(iso);
+  target.setHours(0, 0, 0, 0);
+  return Math.round((target.getTime() - today.getTime()) / 86400000);
+};
 
 export const ClientCard = ({ client, compact = false }: { client: Client; compact?: boolean }) => {
   const navigate = useNavigate();
@@ -20,6 +34,10 @@ export const ClientCard = ({ client, compact = false }: { client: Client; compac
   const [updating, setUpdating] = useState(false);
   const days = daysSince(client.stage_updated_at);
   const color = stageColorMap[client.pipeline_stage];
+
+  const trainingDaysLeft = daysUntil(client.training_end_date);
+  const isTrainingExpiringSoon =
+    typeof trainingDaysLeft === 'number' && trainingDaysLeft >= 0 && trainingDaysLeft <= 15;
 
   const handleStageChange = async (stage: string) => {
     if (stage === client.pipeline_stage) return;
@@ -56,9 +74,27 @@ export const ClientCard = ({ client, compact = false }: { client: Client; compac
               )}
             </div>
           </div>
-          {typeof client.lead_score === 'number' && (
-            <LeadScoreBadge score={client.lead_score} size="sm" />
-          )}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {isTrainingExpiringSoon && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex h-6 w-6 items-center justify-center rounded-full bg-warning/15 text-warning animate-pulse"
+                    aria-label="Percorso in scadenza"
+                  >
+                    <Clock className="h-3.5 w-3.5" />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="left" className="max-w-[200px] text-xs">
+                  Percorso in scadenza tra {trainingDaysLeft}{trainingDaysLeft === 1 ? ' giorno' : ' giorni'}. Prepara il rinnovo.
+                </TooltipContent>
+              </Tooltip>
+            )}
+            {typeof client.lead_score === 'number' && (
+              <LeadScoreBadge score={client.lead_score} size="sm" />
+            )}
+          </div>
         </div>
         <div className="mt-3 flex items-center justify-between gap-2">
           <SourceBadge source={client.lead_source} />
