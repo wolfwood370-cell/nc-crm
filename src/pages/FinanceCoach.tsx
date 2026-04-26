@@ -1,10 +1,9 @@
-import { useMemo, useState } from 'react';
+import { forwardRef, useEffect, useMemo, useState } from 'react';
 import { useCrm } from '@/store/useCrm';
 import { TAX_RATE } from '@/types/crm';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PrivacyMask } from '@/components/crm/PrivacyMask';
 import { supabase } from '@/integrations/supabase/client';
