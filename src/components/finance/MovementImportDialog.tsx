@@ -16,7 +16,7 @@ interface Props {
   onOpenChange: (v: boolean) => void;
 }
 
-export const MovementImportDialog = ({ open, onOpenChange }: Props) => {
+export const MovementImportDialog = forwardRef<HTMLDivElement, Props>(({ open, onOpenChange }, _ref) => {
   const { bankAccounts, importMovements } = useCrm();
   const [accountId, setAccountId] = useState<string>('');
   const [format, setFormat] = useState<BankFormat>('generic');
