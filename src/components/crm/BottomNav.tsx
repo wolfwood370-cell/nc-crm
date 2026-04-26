@@ -43,8 +43,7 @@ export const BottomNav = ({ onFabClick }: Props) => {
     navigate('/auth');
   };
 
-  const isActive = (to: string) =>
-    location.pathname === to || (to !== '/' && location.pathname.startsWith(to));
+  const isActive = (to: string) => location.pathname === to;
 
   const renderNavLink = (to: string, label: string, Icon: typeof Home) => {
     const active = isActive(to);

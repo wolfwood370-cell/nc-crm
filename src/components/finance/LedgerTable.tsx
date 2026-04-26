@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useCrm } from '@/store/useCrm';
 import {
-  formatEuro, FinancialMovement, MovementClassification,
+  formatEuro, FinancialMovement, MovementClassification, MovementRecurrenceType,
 } from '@/types/crm';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Switch } from '@/components/ui/switch';
@@ -10,10 +10,10 @@ import { Input } from '@/components/ui/input';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Trash2, Check, Search, X, ArrowUp, ArrowDown } from 'lucide-react';
+import { Trash2, Check, Search, X, ArrowUp, ArrowDown, Pencil } from 'lucide-react';
 import { PrivacyMask } from '@/components/crm/PrivacyMask';
 import { cn } from '@/lib/utils';
+import { RecurrencePopover } from './RecurrencePopover';
 
 interface Props {
   year: number;
@@ -110,6 +110,7 @@ export const LedgerTable = ({ year, month }: Props) => {
                 <TableHead className="text-[10px] uppercase tracking-wider w-[110px]">Conto</TableHead>
                 <TableHead className="text-[10px] uppercase tracking-wider w-[140px]">Categoria</TableHead>
                 <TableHead className="text-[10px] uppercase tracking-wider w-[110px]">Classifica</TableHead>
+                <TableHead className="text-[10px] uppercase tracking-wider w-[120px]">Ricorrenza</TableHead>
                 <TableHead className="text-[10px] uppercase tracking-wider w-[110px] text-right">Importo</TableHead>
                 <TableHead className="text-[10px] uppercase tracking-wider w-[60px] text-center">Rev.</TableHead>
                 <TableHead className="w-[40px]"></TableHead>
@@ -118,7 +119,7 @@ export const LedgerTable = ({ year, month }: Props) => {
             <TableBody>
               {filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-sm text-muted-foreground">
+                  <TableCell colSpan={9} className="text-center py-8 text-sm text-muted-foreground">
                     Nessun movimento per i filtri selezionati.
                   </TableCell>
                 </TableRow>
@@ -131,10 +132,10 @@ export const LedgerTable = ({ year, month }: Props) => {
                     {new Date(mv.date).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' })}
                   </TableCell>
                   <TableCell className="py-2">
-                    <span className="line-clamp-1">{mv.description}</span>
-                    {mv.is_recurring && (
-                      <Badge variant="outline" className="ml-1 h-4 px-1 text-[9px]">Ric.</Badge>
-                    )}
+                    <InlineDescriptionEdit
+                      value={mv.description}
+                      onSave={(v) => updateMovement(mv.id, { description: v })}
+                    />
                   </TableCell>
                   <TableCell className="py-2">
                     <span className="text-[10px] text-muted-foreground font-medium">{accountName(mv.account_id)}</span>
@@ -177,6 +178,13 @@ export const LedgerTable = ({ year, month }: Props) => {
                         {mv.classification === 'business' ? 'Az.' : 'Pers.'}
                       </span>
                     </div>
+                  </TableCell>
+                  <TableCell className="py-2">
+                    <RecurrencePopover
+                      type={mv.recurrence_type}
+                      value={mv.recurrence_value}
+                      onChange={(t, v) => updateMovement(mv.id, { recurrence_type: t, recurrence_value: v, is_recurring: t !== 'none' })}
+                    />
                   </TableCell>
                   <TableCell className="py-2 text-right">
                     <PrivacyMask>
@@ -222,5 +230,53 @@ export const LedgerTable = ({ year, month }: Props) => {
         </div>
       </div>
     </div>
+  );
+};
+
+interface InlineDescriptionEditProps {
+  value: string;
+  onSave: (v: string) => void;
+}
+
+const InlineDescriptionEdit = ({ value, onSave }: InlineDescriptionEditProps) => {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => { if (!editing) setDraft(value); }, [value, editing]);
+  useEffect(() => { if (editing) inputRef.current?.focus(); }, [editing]);
+
+  const commit = () => {
+    const trimmed = draft.trim();
+    if (trimmed && trimmed !== value) onSave(trimmed);
+    setEditing(false);
+  };
+
+  if (editing) {
+    return (
+      <Input
+        ref={inputRef}
+        value={draft}
+        onChange={e => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') { e.preventDefault(); commit(); }
+          else if (e.key === 'Escape') { setDraft(value); setEditing(false); }
+        }}
+        className="h-7 text-xs"
+      />
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => setEditing(true)}
+      className="group inline-flex items-center gap-1 max-w-full text-left hover:text-primary transition-colors"
+      title="Clicca per modificare"
+    >
+      <span className="line-clamp-1">{value || <span className="italic text-muted-foreground">Senza descrizione</span>}</span>
+      <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-100 shrink-0 text-muted-foreground" />
+    </button>
   );
 };

@@ -179,6 +179,8 @@ export type Database = {
           is_recurring: boolean
           is_reviewed: boolean
           notes: string | null
+          recurrence_type: string
+          recurrence_value: number | null
           source: string
           type: string
           updated_at: string
@@ -197,6 +199,8 @@ export type Database = {
           is_recurring?: boolean
           is_reviewed?: boolean
           notes?: string | null
+          recurrence_type?: string
+          recurrence_value?: number | null
           source?: string
           type: string
           updated_at?: string
@@ -215,6 +219,8 @@ export type Database = {
           is_recurring?: boolean
           is_reviewed?: boolean
           notes?: string | null
+          recurrence_type?: string
+          recurrence_value?: number | null
           source?: string
           type?: string
           updated_at?: string

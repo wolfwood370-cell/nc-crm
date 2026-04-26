@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useMemo, useState } from 'react';
+import { forwardRef, useMemo, useState } from 'react';
 import { useCrm } from '@/store/useCrm';
 import { TAX_RATE } from '@/types/crm';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -90,15 +90,23 @@ export default function FinanceCoach() {
   }, [movements, clients, unifiedCategories]);
 
   // ============ Adaptive Simulator ============
-  const defaultDaysLeft = useMemo(() => {
+  // Real days left to deadline (read-only, derived from goal)
+  const realDaysLeft = useMemo(() => {
     if (!activeGoal) return 180;
     const ms = new Date(activeGoal.deadline).getTime() - Date.now();
     return Math.max(30, Math.round(ms / (1000 * 60 * 60 * 24)));
   }, [activeGoal]);
 
-  const [daysToDeadline, setDaysToDeadline] = useState<number>(defaultDaysLeft);
-  // sync slider when goal changes (proper effect, no setState during render)
-  useEffect(() => { setDaysToDeadline(defaultDaysLeft); }, [defaultDaysLeft]);
+  // Simulated days — initialised ONCE from real days; user controls it freely.
+  // We reset only when the active goal id changes (different goal = different baseline).
+  const [simulatedDays, setSimulatedDays] = useState<number>(() => realDaysLeft);
+  const [lastGoalId, setLastGoalId] = useState<string | undefined>(activeGoal?.id);
+  if (activeGoal?.id !== lastGoalId) {
+    setLastGoalId(activeGoal?.id);
+    setSimulatedDays(realDaysLeft);
+  }
+  const daysToDeadline = simulatedDays;
+  const setDaysToDeadline = setSimulatedDays;
 
   const sim = useMemo(() => {
     const monthsLeft = Math.max(0.5, daysToDeadline / 30);
@@ -258,9 +266,18 @@ export default function FinanceCoach() {
               onValueChange={(v) => setDaysToDeadline(v[0])}
               disabled={!activeGoal}
             />
-            <div className="flex justify-between text-[10px] text-muted-foreground mt-1.5">
+            <div className="flex items-center justify-between text-[10px] text-muted-foreground mt-1.5">
               <span>1 mese</span><span>1 anno</span><span>3 anni</span>
             </div>
+            {activeGoal && simulatedDays !== realDaysLeft && (
+              <button
+                type="button"
+                onClick={() => setSimulatedDays(realDaysLeft)}
+                className="mt-2 text-[10px] uppercase tracking-wider font-semibold text-primary hover:underline"
+              >
+                Reset a scadenza reale ({realDaysLeft} giorni)
+              </button>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
