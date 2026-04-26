@@ -246,6 +246,8 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
         source: (r.source ?? 'manual') as MovementSource,
         external_ref: r.external_ref ?? undefined,
         notes: r.notes ?? undefined,
+        recurrence_type: (r.recurrence_type ?? 'none') as MovementRecurrenceType,
+        recurrence_value: r.recurrence_value ?? undefined,
         created_at: r.created_at,
       }));
     },
