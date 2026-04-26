@@ -177,9 +177,30 @@ export default function FinanceCoach() {
     };
   }, [daysToDeadline, activeGoal, snapshot]);
 
-  // ============ AI Briefing ============
+  // ============ AI Briefing (persistente) ============
   const [briefing, setBriefing] = useState<string>('');
   const [briefingLoading, setBriefingLoading] = useState(false);
+  const [briefingDate, setBriefingDate] = useState<string | null>(null);
+  const [configId, setConfigId] = useState<string | null>(null);
+
+  // Carica l'ultimo briefing salvato al mount
+  useEffect(() => {
+    const load = async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data } = await (supabase as any)
+        .from('finance_coach_config')
+        .select('id, latest_briefing, last_briefing_date')
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      if (data) {
+        setConfigId(data.id);
+        if (data.latest_briefing) setBriefing(data.latest_briefing);
+        setBriefingDate(data.last_briefing_date ?? null);
+      }
+    };
+    load();
+  }, []);
 
   const generateBriefing = async () => {
     setBriefingLoading(true);
@@ -228,7 +249,28 @@ export default function FinanceCoach() {
       if (error) throw error;
       const payload = (data ?? {}) as { error?: string; briefing?: string };
       if (payload.error) throw new Error(payload.error);
-      setBriefing(payload.briefing ?? '');
+      const newBriefing = payload.briefing ?? '';
+      setBriefing(newBriefing);
+
+      // Persisti l'ultimo briefing
+      const nowIso = new Date().toISOString();
+      if (configId) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase as any)
+          .from('finance_coach_config')
+          .update({ latest_briefing: newBriefing, last_briefing_date: nowIso })
+          .eq('id', configId);
+      } else {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: ins } = await (supabase as any)
+          .from('finance_coach_config')
+          .insert({ latest_briefing: newBriefing, last_briefing_date: nowIso })
+          .select('id')
+          .single();
+        if (ins?.id) setConfigId(ins.id);
+      }
+      setBriefingDate(nowIso);
+
       toast.success('Briefing generato');
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Errore generazione briefing');
