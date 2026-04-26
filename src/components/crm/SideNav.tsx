@@ -1,10 +1,11 @@
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { Home, KanbanSquare, Users, Plus, Dumbbell, BarChart3, LogOut, Target, Brain, BrainCircuit } from 'lucide-react';
+import { Home, KanbanSquare, Users, Plus, BarChart3, LogOut, Target, Brain, BrainCircuit } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { PrivacyToggle } from '@/components/crm/PrivacyToggle';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import logoIcon from '@/assets/logo-icon.png';
 
 interface Props {
   onFabClick: () => void;
@@ -31,8 +32,8 @@ export const SideNav = ({ onFabClick }: Props) => {
   return (
     <aside className="hidden md:flex md:w-60 lg:w-64 shrink-0 flex-col border-r border-border bg-card/40 sticky top-0 h-screen">
       <div className="flex items-center gap-2 px-5 py-5">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-primary shadow-glow">
-          <Dumbbell className="h-5 w-5 text-primary-foreground" strokeWidth={2.5} />
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl overflow-hidden shadow-glow">
+          <img src={logoIcon} alt="Life & Business OS" width={40} height={40} className="h-10 w-10 object-cover" />
         </div>
         <div>
           <p className="text-sm font-bold leading-tight">Life & Business OS</p>
