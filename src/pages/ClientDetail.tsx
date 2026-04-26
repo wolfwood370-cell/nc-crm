@@ -364,7 +364,9 @@ const ClientDetail = () => {
 
       if (contractDirty) {
         const effectiveStart = trainingStart || todayIso();
-        const effectiveEnd = computeContractEndDate(effectiveStart, effectiveService, contractDuration);
+        const computedEnd = computeContractEndDate(effectiveStart, effectiveService, contractDuration);
+        // NO_DURATION services → send null to clear any stale end-date in DB.
+        const effectiveEnd = (computedEnd ?? null) as unknown as string | undefined;
         await updateClient(client!.id, {
           service_sold: effectiveService,
           actual_price: formPriceNum,
