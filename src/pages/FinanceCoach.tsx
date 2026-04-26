@@ -213,6 +213,9 @@ export default function FinanceCoach() {
             avgTicket: snapshot.avgTicket,
             pipelineVolume: snapshot.pipelineVolume,
             activeClients: snapshot.activeClients,
+            expiringIn30: snapshot.expiringIn30Count,
+            expiringIn60: snapshot.expiringIn60Count,
+            expiringClients: snapshot.expiringClients,
           },
           derived: {
             requiredMonthlyNet: sim.requiredMonthlyNet,
