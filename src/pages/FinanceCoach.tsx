@@ -361,44 +361,53 @@ export default function FinanceCoach() {
   );
 }
 
-function DnaMetric({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: React.ReactNode; sub?: string }) {
-  return (
-    <div className="space-y-1">
-      <div className="flex items-center gap-1.5 text-xs text-muted-foreground uppercase tracking-wider font-semibold">
-        {icon}{label}
-      </div>
-      <div className="text-xl md:text-2xl font-bold tabular-nums">{value}</div>
-      {sub && <div className="text-[10px] text-muted-foreground">{sub}</div>}
+const DnaMetric = forwardRef<
+  HTMLDivElement,
+  { icon: React.ReactNode; label: string; value: React.ReactNode; sub?: string }
+>(({ icon, label, value, sub }, ref) => (
+  <div ref={ref} className="space-y-1">
+    <div className="flex items-center gap-1.5 text-xs text-muted-foreground uppercase tracking-wider font-semibold">
+      {icon}{label}
     </div>
-  );
-}
+    <div className="text-xl md:text-2xl font-bold tabular-nums">{value}</div>
+    {sub && <div className="text-[10px] text-muted-foreground">{sub}</div>}
+  </div>
+));
+DnaMetric.displayName = 'DnaMetric';
 
-function SimMetric({ label, value, hint, danger }: { label: string; value: React.ReactNode; hint?: string; danger?: boolean }) {
-  return (
-    <div className={cn(
+const SimMetric = forwardRef<
+  HTMLDivElement,
+  { label: string; value: React.ReactNode; hint?: string; danger?: boolean }
+>(({ label, value, hint, danger }, ref) => (
+  <div
+    ref={ref}
+    className={cn(
       'p-4 rounded-xl border bg-background/40',
       danger ? 'border-rose-500/40 bg-rose-500/5' : 'border-border/60'
-    )}>
-      <div className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">{label}</div>
-      <div className={cn(
-        'text-2xl md:text-3xl font-bold tabular-nums mt-1',
-        danger ? 'text-rose-500' : 'text-foreground'
-      )}>{value}</div>
-      {hint && <div className="text-[10px] text-muted-foreground mt-1">{hint}</div>}
-    </div>
-  );
-}
+    )}
+  >
+    <div className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">{label}</div>
+    <div className={cn(
+      'text-2xl md:text-3xl font-bold tabular-nums mt-1',
+      danger ? 'text-rose-500' : 'text-foreground'
+    )}>{value}</div>
+    {hint && <div className="text-[10px] text-muted-foreground mt-1">{hint}</div>}
+  </div>
+));
+SimMetric.displayName = 'SimMetric';
 
-function ContextCard({ icon, title, value, sub }: { icon: React.ReactNode; title: string; value: React.ReactNode; sub?: string }) {
-  return (
-    <Card className="border-border/60 bg-card/60 backdrop-blur">
-      <CardContent className="p-4">
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground uppercase tracking-wider font-semibold">
-          {icon}{title}
-        </div>
-        <div className="text-xl font-bold tabular-nums mt-1">{value}</div>
-        {sub && <div className="text-[10px] text-muted-foreground mt-0.5">{sub}</div>}
-      </CardContent>
-    </Card>
-  );
-}
+const ContextCard = forwardRef<
+  HTMLDivElement,
+  { icon: React.ReactNode; title: string; value: React.ReactNode; sub?: string }
+>(({ icon, title, value, sub }, ref) => (
+  <Card ref={ref} className="border-border/60 bg-card/60 backdrop-blur">
+    <CardContent className="p-4">
+      <div className="flex items-center gap-1.5 text-xs text-muted-foreground uppercase tracking-wider font-semibold">
+        {icon}{title}
+      </div>
+      <div className="text-xl font-bold tabular-nums mt-1">{value}</div>
+      {sub && <div className="text-[10px] text-muted-foreground mt-0.5">{sub}</div>}
+    </CardContent>
+  </Card>
+));
+ContextCard.displayName = 'ContextCard';
