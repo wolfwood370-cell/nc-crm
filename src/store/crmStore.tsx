@@ -599,6 +599,9 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
         notes: m.notes ?? null,
         recurrence_type: m.recurrence_type ?? 'none',
         recurrence_value: m.recurrence_value ?? null,
+        // Phase 37 fix: persist contract context onto the ledger entry
+        service_sold: m.service_sold ?? null,
+        actual_price: m.actual_price ?? null,
       });
       if (error) throw error;
     },
