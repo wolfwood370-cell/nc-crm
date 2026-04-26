@@ -271,7 +271,7 @@ const ClientDetail = () => {
             : `Pagamento di ${formatEuro(value)} registrato (${payMethod})`
       );
       setPayAmount('');
-      setPayServiceId('');
+      setPayServiceId(undefined);
       setPayType('Unica Soluzione');
       setPayInstallments(2);
       setPayDate(todayIso());
