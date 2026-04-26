@@ -1,9 +1,30 @@
 export type LeadSource =
   | 'Gym-provided'
-  | 'PT Pack 99€'
   | 'Gym Floor'
   | 'Referral'
-  | 'Social Media';
+  | 'Social Media'
+  | 'Other';
+
+export type ServiceType =
+  | 'Percorso Base'
+  | 'Percorso Light'
+  | 'Percorso Plus'
+  | 'Percorso Premium'
+  | 'Programmazione Avanzata'
+  | 'NC Nutrition'
+  | 'PT Pack 99€'
+  | 'Altro';
+
+export const SERVICE_TYPES: ServiceType[] = [
+  'Percorso Base',
+  'Percorso Light',
+  'Percorso Plus',
+  'Percorso Premium',
+  'Programmazione Avanzata',
+  'NC Nutrition',
+  'PT Pack 99€',
+  'Altro',
+];
 
 export type PipelineStage =
   | 'Lead Acquired'
@@ -50,6 +71,8 @@ export interface Client {
   gym_signup_date?: string;   // ISO date
   gym_expiry_date?: string;   // ISO date
   gdpr_consent?: boolean;
+  service_sold?: ServiceType;
+  actual_price?: number;
 }
 
 export type Gender = 'M' | 'F' | 'Altro';
@@ -67,10 +90,10 @@ export interface Financials {
 
 export const LEAD_SOURCES: LeadSource[] = [
   'Gym-provided',
-  'PT Pack 99€',
   'Gym Floor',
   'Referral',
   'Social Media',
+  'Other',
 ];
 
 export const PIPELINE_STAGES: PipelineStage[] = [
@@ -308,10 +331,10 @@ export const movementTypeLabel: Record<MovementType, string> = {
 
 export const leadSourceLabel: Record<LeadSource, string> = {
   'Gym-provided': 'Contatto Palestra',
-  'PT Pack 99€': 'PT Pack 99€',
   'Gym Floor': 'Approccio Sala',
   'Referral': 'Passaparola',
   'Social Media': 'Social Media',
+  'Other': 'Altro',
 };
 
 export const pipelineStageLabel: Record<PipelineStage, string> = {
@@ -325,10 +348,10 @@ export const pipelineStageLabel: Record<PipelineStage, string> = {
 
 export const sourceColorMap: Record<LeadSource, string> = {
   'Gym-provided': 'source-gym',
-  'PT Pack 99€': 'source-pack',
   'Gym Floor': 'source-floor',
   'Referral': 'source-referral',
   'Social Media': 'source-social',
+  'Other': 'source-pack',
 };
 
 export const stageColorMap: Record<PipelineStage, string> = {

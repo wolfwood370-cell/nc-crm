@@ -25,6 +25,7 @@ import {
   GENDERS, Gender, genderLabel,
   PaymentType, PaymentMethod, PAYMENT_METHODS,
   Transaction, TransactionStatus, TRANSACTION_STATUSES,
+  SERVICE_TYPES, ServiceType,
   formatEuro,
 } from '@/types/crm';
 import { baseLeadScore } from '@/lib/leadScore';
@@ -138,6 +139,8 @@ const ClientDetail = () => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [gdprConsent, setGdprConsent] = useState(false);
+  const [serviceSold, setServiceSold] = useState<ServiceType | ''>('');
+  const [actualPrice, setActualPrice] = useState('');
 
   // Lead score behavior checklist (objective scoring)
   const [behaviorResponsive, setBehaviorResponsive] = useState(false);
@@ -181,6 +184,8 @@ const ClientDetail = () => {
       setFirstName(client.first_name ?? '');
       setLastName(client.last_name ?? '');
       setGdprConsent(!!client.gdpr_consent);
+      setServiceSold((client.service_sold as ServiceType) ?? '');
+      setActualPrice(client.actual_price !== undefined && client.actual_price !== null ? String(client.actual_price) : '');
     }
   }, [client]);
 
@@ -229,6 +234,8 @@ const ClientDetail = () => {
       phone: phone.trim() || undefined,
       email: email.trim() || undefined,
       gdpr_consent: gdprConsent,
+      service_sold: serviceSold || undefined,
+      actual_price: actualPrice ? Number(actualPrice.replace(',', '.')) : undefined,
     });
     toast.success('Profilo aggiornato');
   };
@@ -615,6 +622,47 @@ const ClientDetail = () => {
           <TabsContent value="commerciale" className="space-y-4 mt-4">
             <section className="rounded-2xl border border-border bg-card p-4 space-y-4 shadow-card">
               <h3 className="font-bold text-sm text-foreground">Dati Commerciali</h3>
+
+              {/* Servizio Venduto + Prezzo Effettivo (indipendente dalla Fonte) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-xl border border-border bg-secondary/30 p-3">
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <Sparkles className="h-3 w-3" /> Servizio Venduto
+                  </label>
+                  <Select
+                    value={serviceSold || undefined}
+                    onValueChange={(v) => setServiceSold(v as ServiceType)}
+                  >
+                    <SelectTrigger className="h-12 rounded-xl bg-card border border-border text-sm font-semibold">
+                      <SelectValue placeholder="Seleziona servizio…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SERVICE_TYPES.map(s => (
+                        <SelectItem key={s} value={s}>{s}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <Euro className="h-3 w-3" /> Prezzo Effettivo (€)
+                  </label>
+                  <Input
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    step="0.01"
+                    value={actualPrice}
+                    onChange={(e) => setActualPrice(e.target.value)}
+                    placeholder="es. 1250"
+                    className="h-12 rounded-xl bg-card border border-border text-base font-semibold"
+                  />
+                </div>
+                <p className="sm:col-span-2 text-[10px] text-muted-foreground">
+                  Indipendente dalla fonte di acquisizione. Premi "Salva profilo" in fondo per registrare.
+                </p>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-3 sm:col-span-2">
                   <div className="flex items-center justify-between gap-2">
