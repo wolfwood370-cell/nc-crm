@@ -131,7 +131,7 @@ const ClientDetail = () => {
   
   const [churn, setChurn] = useState<ChurnRisk>('Basso');
   const [birthDate, setBirthDate] = useState('');
-  const [gender, setGender] = useState<Gender | ''>('');
+  const [gender, setGender] = useState<Gender | undefined>(undefined);
   const [gymSignup, setGymSignup] = useState('');
   const [gymExpiry, setGymExpiry] = useState('');
   const [phone, setPhone] = useState('');
@@ -139,7 +139,7 @@ const ClientDetail = () => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [gdprConsent, setGdprConsent] = useState(false);
-  const [serviceSold, setServiceSold] = useState<ServiceType | ''>('');
+  const [serviceSold, setServiceSold] = useState<ServiceType | undefined>(undefined);
   const [actualPrice, setActualPrice] = useState('');
   const [trainingStart, setTrainingStart] = useState('');
   const [trainingEnd, setTrainingEnd] = useState('');
