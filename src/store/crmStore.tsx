@@ -7,6 +7,8 @@ import {
   Service, MonthlyBreakdown, HISTORY_START_YEAR, HISTORY_START_MONTH,
   PersonalExpense, LifeGoal, DynamicTarget, ExpenseCategory, PersonalIncome,
   BusinessExpense, BusinessExpenseCategory, IncomeCategory, RecurrenceType,
+  BankAccount, FinancialMovement, UnifiedCategory, MovementClassification,
+  MovementType, MovementSource, BankAccountType, CategoryScope, CategoryKind,
 } from '@/types/crm';
 import { CrmContext, CrmContextValue } from './crmContext';
 
