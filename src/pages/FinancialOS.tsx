@@ -299,9 +299,17 @@ const FinancialOS = () => {
             ))}
           </SelectContent>
         </Select>
-        <Button size="sm" onClick={() => setImportOpen(true)} className="gap-2 h-9 ml-auto">
-          <Upload className="h-3.5 w-3.5" /> Importa CSV
-        </Button>
+        <div className="flex flex-wrap items-center gap-2 ml-auto">
+          <Button size="sm" variant="outline" onClick={() => setCategoryMgrOpen(true)} className="gap-2 h-9">
+            <Tags className="h-3.5 w-3.5" /> Gestisci Categorie
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => setImportOpen(true)} className="gap-2 h-9">
+            <Upload className="h-3.5 w-3.5" /> Importa CSV
+          </Button>
+          <Button size="sm" onClick={() => setManualOpen(true)} className="gap-2 h-9 gradient-primary text-primary-foreground">
+            <Plus className="h-3.5 w-3.5" /> Aggiungi Manualmente
+          </Button>
+        </div>
       </div>
 
       <BankAccountCards year={ledgerYear} month={ledgerMonth} />
