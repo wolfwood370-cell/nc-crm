@@ -12,7 +12,7 @@ import { ClientDetailSkeleton } from '@/components/crm/skeletons';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
@@ -25,7 +25,7 @@ import {
   GENDERS, Gender, genderLabel,
   PaymentType, PaymentMethod, PAYMENT_METHODS,
   Transaction, TransactionStatus, TRANSACTION_STATUSES,
-  SERVICE_TYPES, ServiceType,
+  SERVICE_TYPES, SERVICE_GROUPS, ServiceType,
   formatEuro,
 } from '@/types/crm';
 import { baseLeadScore } from '@/lib/leadScore';
@@ -141,6 +141,8 @@ const ClientDetail = () => {
   const [gdprConsent, setGdprConsent] = useState(false);
   const [serviceSold, setServiceSold] = useState<ServiceType | ''>('');
   const [actualPrice, setActualPrice] = useState('');
+  const [trainingStart, setTrainingStart] = useState('');
+  const [trainingEnd, setTrainingEnd] = useState('');
 
   // Lead score behavior checklist (objective scoring)
   const [behaviorResponsive, setBehaviorResponsive] = useState(false);
@@ -186,6 +188,8 @@ const ClientDetail = () => {
       setGdprConsent(!!client.gdpr_consent);
       setServiceSold((client.service_sold as ServiceType) ?? '');
       setActualPrice(client.actual_price !== undefined && client.actual_price !== null ? String(client.actual_price) : '');
+      setTrainingStart(client.training_start_date ? client.training_start_date.slice(0, 10) : '');
+      setTrainingEnd(client.training_end_date ? client.training_end_date.slice(0, 10) : '');
     }
   }, [client]);
 
@@ -236,6 +240,8 @@ const ClientDetail = () => {
       gdpr_consent: gdprConsent,
       service_sold: serviceSold || undefined,
       actual_price: actualPrice ? Number(actualPrice.replace(',', '.')) : undefined,
+      training_start_date: trainingStart || undefined,
+      training_end_date: trainingEnd || undefined,
     });
     toast.success('Profilo aggiornato');
   };
