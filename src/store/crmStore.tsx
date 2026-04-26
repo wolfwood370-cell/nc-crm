@@ -872,6 +872,13 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
     updateLifeGoal: async (id, patch) => { await updateGoalMutation.mutateAsync({ id, patch }); },
     deleteLifeGoal: async (id) => { await deleteGoalMutation.mutateAsync(id); },
     setMonthlyTarget,
+    getRemainingDays: (clientId: string) => {
+      const c = clients.find(cl => cl.id === clientId);
+      if (!c?.training_end_date) return null;
+      const end = new Date(c.training_end_date).getTime();
+      const ms = end - Date.now();
+      return Math.ceil(ms / (1000 * 60 * 60 * 24));
+    },
 
     // ============ Phase 28: Unified Ledger ============
     bankAccounts,
