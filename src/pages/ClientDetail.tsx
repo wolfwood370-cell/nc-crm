@@ -25,6 +25,7 @@ import {
   GENDERS, Gender, genderLabel,
   PaymentType, PaymentMethod, PAYMENT_METHODS,
   Transaction, TransactionStatus, TRANSACTION_STATUSES,
+  SERVICE_TYPES, ServiceType,
   formatEuro,
 } from '@/types/crm';
 import { baseLeadScore } from '@/lib/leadScore';
@@ -138,6 +139,8 @@ const ClientDetail = () => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [gdprConsent, setGdprConsent] = useState(false);
+  const [serviceSold, setServiceSold] = useState<ServiceType | ''>('');
+  const [actualPrice, setActualPrice] = useState('');
 
   // Lead score behavior checklist (objective scoring)
   const [behaviorResponsive, setBehaviorResponsive] = useState(false);
@@ -181,6 +184,8 @@ const ClientDetail = () => {
       setFirstName(client.first_name ?? '');
       setLastName(client.last_name ?? '');
       setGdprConsent(!!client.gdpr_consent);
+      setServiceSold((client.service_sold as ServiceType) ?? '');
+      setActualPrice(client.actual_price !== undefined && client.actual_price !== null ? String(client.actual_price) : '');
     }
   }, [client]);
 
@@ -229,6 +234,8 @@ const ClientDetail = () => {
       phone: phone.trim() || undefined,
       email: email.trim() || undefined,
       gdpr_consent: gdprConsent,
+      service_sold: serviceSold || undefined,
+      actual_price: actualPrice ? Number(actualPrice.replace(',', '.')) : undefined,
     });
     toast.success('Profilo aggiornato');
   };
