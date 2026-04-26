@@ -11,6 +11,7 @@ import { RoiChart } from '@/components/crm/RoiChart';
 import { ClientDetailSkeleton } from '@/components/crm/skeletons';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
+import { Progress } from '@/components/ui/progress';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -121,6 +122,9 @@ const ClientDetail = () => {
     () => clientTransactions.filter(t => t.status === 'In Attesa').reduce((s, t) => s + t.amount, 0),
     [clientTransactions]
   );
+  const contractTotal = client?.actual_price ?? 0;
+  const contractRemaining = Math.max(0, contractTotal - totalPaid);
+  const contractProgressPct = contractTotal > 0 ? Math.min(100, Math.round((totalPaid / contractTotal) * 100)) : 0;
 
   const [motivator, setMotivator] = useState('');
   const [stated, setStated] = useState('');
@@ -194,6 +198,14 @@ const ClientDetail = () => {
       setFormInitialized(true);
     }
   }, [client]);
+
+  // SMART AMOUNT: prefill remaining balance once form is initialized
+  useEffect(() => {
+    if (formInitialized && !payAmount && contractRemaining > 0) {
+      setPayAmount(String(contractRemaining));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formInitialized, contractRemaining]);
 
   if (isLoading) {
     return <ClientDetailSkeleton />;
@@ -272,7 +284,9 @@ const ClientDetail = () => {
             ? `Pagamento ricorrente di ${formatEuro(value)} attivato (ogni 28 giorni)`
             : `Pagamento di ${formatEuro(value)} registrato (${payMethod})`
       );
-      setPayAmount('');
+      // After saving, prefill the new remaining balance (or empty if fully paid)
+      const newRemaining = Math.max(0, contractTotal - (totalPaid + value));
+      setPayAmount(newRemaining > 0 ? String(newRemaining) : '');
       setPayServiceId(undefined);
       setPayType('Unica Soluzione');
       setPayInstallments(2);
@@ -396,6 +410,59 @@ const ClientDetail = () => {
             </div>
           </div>
         </div>
+
+        {/* Contratto Attivo — Snapshot di servizio, prezzo e progresso pagamenti */}
+        {(client.service_sold || contractTotal > 0 || client.training_start_date || client.training_end_date) && (
+          <section className="rounded-3xl border-2 border-primary/30 bg-gradient-to-br from-primary/5 via-card to-card p-5 shadow-card space-y-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Contratto Attivo</p>
+                <h3 className="mt-1 text-lg font-bold text-foreground truncate">
+                  {client.service_sold ?? 'Servizio non assegnato'}
+                </h3>
+                {(client.training_start_date || client.training_end_date) && (
+                  <p className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                    <CalendarClock className="h-3.5 w-3.5" />
+                    <span>
+                      {client.training_start_date
+                        ? new Date(client.training_start_date).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })
+                        : '—'}
+                      {' → '}
+                      {client.training_end_date
+                        ? new Date(client.training_end_date).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })
+                        : '—'}
+                    </span>
+                  </p>
+                )}
+              </div>
+              <div className="text-right shrink-0">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Valore</p>
+                <p className="text-xl font-bold text-foreground tabular-nums">{formatEuro(contractTotal)}</p>
+              </div>
+            </div>
+
+            {contractTotal > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-baseline justify-between gap-2 text-[11px]">
+                  <span className="text-muted-foreground">
+                    Incassato <span className="font-bold text-primary tabular-nums">{formatEuro(totalPaid)}</span>
+                  </span>
+                  <span className="text-muted-foreground">
+                    Residuo <span className="font-bold text-foreground tabular-nums">{formatEuro(contractRemaining)}</span>
+                  </span>
+                </div>
+                <Progress value={contractProgressPct} className="h-2" />
+                <p className="text-[10px] text-right text-muted-foreground">{contractProgressPct}% saldato</p>
+              </div>
+            )}
+
+            {!client.service_sold && (
+              <p className="text-[11px] text-muted-foreground rounded-lg bg-secondary/50 p-2">
+                Nessun servizio assegnato. Apri la tab <span className="font-semibold text-foreground">Commerciale</span> per impostare servizio e prezzo del contratto.
+              </p>
+            )}
+          </section>
+        )}
 
         {/* Stage + Source selectors */}
         <section className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -715,48 +782,16 @@ const ClientDetail = () => {
                     </label>
                   </div>
 
-                  {/* Servizio del Catalogo */}
-                  <div className="space-y-1.5">
-                    <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                      <Sparkles className="h-3 w-3" /> Servizio (opzionale)
-                    </label>
-                    <Select
-                      value={payServiceId}
-                      onValueChange={(v) => {
-                        setPayServiceId(v);
-                        const svc = services.find(s => s.id === v);
-                        if (svc) setPayAmount(String(svc.price));
-                      }}
-                    >
-                      <SelectTrigger className="h-12 rounded-xl bg-secondary border-0 text-sm font-semibold">
-                        <SelectValue placeholder="Seleziona dal catalogo…" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Array.from(new Set(services.map(s => s.category))).map(cat => (
-                          <div key={cat}>
-                            <div className="px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{cat}</div>
-                            {services.filter(s => s.category === cat).map(s => (
-                              <SelectItem key={s.id} value={s.id}>
-                                {s.name} — {formatEuro(s.price)}
-                              </SelectItem>
-                            ))}
-                          </div>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {payServiceId && (() => {
-                      const svc = services.find(s => s.id === payServiceId);
-                      return svc ? (
-                        <p className="text-[10px] text-muted-foreground">
-                          Prezzo di listino: <span className="font-semibold text-foreground">{formatEuro(svc.price)}</span> · puoi modificare l'importo qui sotto.
-                        </p>
-                      ) : (
-                        <p className="text-[10px] text-muted-foreground">L'importo si compila automaticamente, ma puoi modificarlo.</p>
-                      );
-                    })()}
-                    {!payServiceId && (
-                      <p className="text-[10px] text-muted-foreground">L'importo si compila automaticamente, ma puoi modificarlo.</p>
-                    )}
+                  {/* Servizio del Contratto (ereditato dal profilo cliente) */}
+                  <div className="rounded-xl border border-primary/20 bg-primary/5 p-2.5 flex items-center gap-2">
+                    <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />
+                    <p className="text-[11px] text-foreground leading-tight">
+                      Servizio:{' '}
+                      <span className="font-bold">{client.service_sold ?? 'Non assegnato'}</span>
+                      {contractRemaining > 0 && (
+                        <span className="text-muted-foreground"> · Residuo: <span className="font-semibold text-foreground tabular-nums">{formatEuro(contractRemaining)}</span></span>
+                      )}
+                    </p>
                   </div>
 
                   {/* Importo Totale */}
@@ -870,10 +905,12 @@ const ClientDetail = () => {
                   {/* Piano Pagamenti */}
                   {clientTransactions.length > 0 && (
                     <div className="space-y-2 pt-2">
-                      <div className="flex items-center justify-between">
-                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Piano Pagamenti</p>
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground truncate">
+                          Pagamenti per <span className="text-foreground">{client.service_sold ?? 'Contratto'}</span>
+                        </p>
                         {totalPending > 0 && (
-                          <p className="text-[10px] font-semibold text-warning">
+                          <p className="text-[10px] font-semibold text-warning shrink-0">
                             In attesa: {formatEuro(totalPending)}
                           </p>
                         )}
@@ -970,6 +1007,22 @@ const ClientDetail = () => {
                           </div>
                         );
                       })}
+
+                      {/* Riepilogo Contratto */}
+                      <div className="mt-2 grid grid-cols-3 gap-2 rounded-xl border border-primary/30 bg-primary/5 p-3">
+                        <div>
+                          <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Totale Contratto</p>
+                          <p className="mt-0.5 text-sm font-bold text-foreground tabular-nums">{formatEuro(contractTotal)}</p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Versato</p>
+                          <p className="mt-0.5 text-sm font-bold text-primary tabular-nums">{formatEuro(totalPaid)}</p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Residuo</p>
+                          <p className={`mt-0.5 text-sm font-bold tabular-nums ${contractRemaining > 0 ? 'text-warning' : 'text-foreground'}`}>{formatEuro(contractRemaining)}</p>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
