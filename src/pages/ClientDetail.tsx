@@ -1007,6 +1007,22 @@ const ClientDetail = () => {
                           </div>
                         );
                       })}
+
+                      {/* Riepilogo Contratto */}
+                      <div className="mt-2 grid grid-cols-3 gap-2 rounded-xl border border-primary/30 bg-primary/5 p-3">
+                        <div>
+                          <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Totale Contratto</p>
+                          <p className="mt-0.5 text-sm font-bold text-foreground tabular-nums">{formatEuro(contractTotal)}</p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Versato</p>
+                          <p className="mt-0.5 text-sm font-bold text-primary tabular-nums">{formatEuro(totalPaid)}</p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Residuo</p>
+                          <p className={`mt-0.5 text-sm font-bold tabular-nums ${contractRemaining > 0 ? 'text-warning' : 'text-foreground'}`}>{formatEuro(contractRemaining)}</p>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
