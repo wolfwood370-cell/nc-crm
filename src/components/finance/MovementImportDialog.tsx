@@ -92,7 +92,7 @@ export const MovementImportDialog = ({ open, onOpenChange }: Props) => {
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) reset(); onOpenChange(v); }}>
+    <Dialog open={open} onOpenChange={(v) => { if (!v) fullReset(); onOpenChange(v); }}>
       <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Importa Movimenti Bancari</DialogTitle>
