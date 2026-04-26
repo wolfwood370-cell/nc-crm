@@ -5,9 +5,8 @@ import {
   Client, TAX_RATE, RoiMetric, LeadSource, PipelineStage,
   ChurnRisk, Gender, Transaction, PaymentType, PaymentMethod,
   Service, MonthlyBreakdown, HISTORY_START_YEAR, HISTORY_START_MONTH,
-  PersonalExpense, LifeGoal, DynamicTarget, ExpenseCategory, PersonalIncome,
-  BusinessExpense, BusinessExpenseCategory, IncomeCategory, RecurrenceType,
-  BankAccount, FinancialMovement, UnifiedCategory, MovementClassification,
+  LifeGoal, DynamicTarget,
+  BankAccount, FinancialMovement, UnifiedCategory,
   MovementType, MovementSource, BankAccountType, CategoryScope, CategoryKind,
 } from '@/types/crm';
 import { CrmContext, CrmContextValue } from './crmContext';
