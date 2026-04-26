@@ -879,8 +879,20 @@ const ClientDetail = () => {
                   />
                 </div>
 
-                {/* Smart Duration: 28gg fissi per servizi short, altrimenti select Mesi */}
-                {serviceSold && SHORT_DURATION_SERVICES.includes(serviceSold) ? (
+                {/* Smart Duration: nessuna durata, 28gg fissi, oppure select Mesi */}
+                {serviceSold && NO_DURATION_SERVICES.includes(serviceSold) ? (
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                      <CalendarClock className="h-3 w-3" /> Durata Percorso
+                    </label>
+                    <div className="h-12 rounded-xl bg-muted/40 border border-border flex items-center px-3 text-sm font-semibold text-muted-foreground">
+                      Nessuna durata
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">
+                      <span className="font-semibold text-foreground">{serviceSold}</span> non prevede una scadenza.
+                    </p>
+                  </div>
+                ) : serviceSold && SHORT_DURATION_SERVICES.includes(serviceSold) ? (
                   <div className="space-y-1.5">
                     <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                       <CalendarClock className="h-3 w-3" /> Durata Percorso
@@ -895,7 +907,7 @@ const ClientDetail = () => {
                 ) : (
                   <div className="space-y-1.5">
                     <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                      <CalendarClock className="h-3 w-3" /> Durata Percorso
+                      <CalendarClock className="h-3 w-3" /> Durata Percorso (1 mese = 28 giorni)
                     </label>
                     <Select
                       value={String(contractDuration)}
