@@ -10,6 +10,7 @@ import {
   SERVICE_GROUPS,
   ServiceType,
   SHORT_DURATION_SERVICES,
+  NO_DURATION_SERVICES,
 } from '@/types/crm';
 import { SourceBadge } from './SourceBadge';
 import { LeadScoreBadge } from './ScoreBadges';
