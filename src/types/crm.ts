@@ -89,7 +89,7 @@ export const SERVICE_GROUPS: { label: string; items: ServiceType[] }[] = [
   { label: 'Percorsi Premium', items: ['Percorso Premium'] },
   { label: 'Programmazione', items: ['Programmazione Avanzata'] },
   { label: 'Nutrizione', items: ['NC Nutrition'] },
-  { label: 'Entry Level', items: ['PT Pack 99€'] },
+  { label: 'Entry Level', items: ['PT Pack Premium'] },
   { label: 'Coaching Online', items: ['Percorso Online'] },
   { label: 'Programmi Esclusivi', items: ['Founders Circle'] },
   { label: 'Altro', items: ['Altro'] },
