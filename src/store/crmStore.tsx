@@ -1108,40 +1108,43 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   // ---------- Dynamic Target (Adaptive Buffer) ----------
+  // ============ Phase 28: Calcoli sul Ledger Unificato ============
+  // Helper: filtra movements per anno/mese
+  const movementsInMonth = useCallback((y: number, m: number): FinancialMovement[] => {
+    const monthStart = new Date(y, m, 1).getTime();
+    const monthEnd = new Date(y, m + 1, 0, 23, 59, 59, 999).getTime();
+    return movements.filter(mv => {
+      const t = new Date(mv.date).getTime();
+      return t >= monthStart && t <= monthEnd;
+    });
+  }, [movements]);
+
+  // ---------- Dynamic Target (Adaptive Buffer) — basato sul Ledger ----------
   const dynamicTarget = useMemo<DynamicTarget>(() => {
     const now = new Date();
     const y = now.getFullYear();
     const m = now.getMonth();
 
-    // Fixed Baseline: occorrenze previste questo mese × amount
-    const totalRecurringExpenses = personalExpenses
-      .filter(e => e.recurrence_type !== 'none')
-      .reduce((s, e) => s + e.amount * occurrencesInMonth(e, y, m), 0);
-
-    const totalRecurringBusinessExpenses = businessExpenses
-      .filter(e => e.recurrence_type !== 'none')
-      .reduce((s, e) => s + e.amount * occurrencesInMonth(e, y, m), 0);
-
+    // Baseline: spese ricorrenti del mese corrente (dal ledger)
+    const thisMonth = movementsInMonth(y, m);
+    const totalRecurringExpenses = thisMonth
+      .filter(mv => mv.type === 'debit' && mv.classification === 'personal' && mv.is_recurring)
+      .reduce((s, mv) => s + mv.amount, 0);
+    const totalRecurringBusinessExpenses = thisMonth
+      .filter(mv => mv.type === 'debit' && mv.classification === 'business' && mv.is_recurring)
+      .reduce((s, mv) => s + mv.amount, 0);
     const fixedBaseline = totalRecurringExpenses + totalRecurringBusinessExpenses;
 
-    // Adaptive Buffer: media mensile delle spese 'none' negli ultimi 90 giorni
+    // Adaptive Buffer: spese non-ricorrenti ultimi 90gg / 3
     const ninetyDaysAgo = new Date(now.getTime() - 90 * 86_400_000);
-    const occasionalSum =
-      personalExpenses
-        .filter(e => e.recurrence_type === 'none')
-        .filter(e => {
-          const d = new Date(e.start_date);
-          return d >= ninetyDaysAgo && d <= now;
-        })
-        .reduce((s, e) => s + e.amount, 0) +
-      businessExpenses
-        .filter(e => e.recurrence_type === 'none')
-        .filter(e => {
-          const d = new Date(e.start_date);
-          return d >= ninetyDaysAgo && d <= now;
-        })
-        .reduce((s, e) => s + e.amount, 0);
-    const adaptiveBuffer = occasionalSum / 3; // 90gg → media mensile
+    const occasionalSum = movements
+      .filter(mv => mv.type === 'debit' && !mv.is_recurring)
+      .filter(mv => {
+        const d = new Date(mv.date);
+        return d >= ninetyDaysAgo && d <= now;
+      })
+      .reduce((s, mv) => s + mv.amount, 0);
+    const adaptiveBuffer = occasionalSum / 3;
 
     const activeGoal = lifeGoals.find(g => g.is_active);
     let monthlyGoalSaving = 0;
@@ -1167,21 +1170,19 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
       dynamicGrossTarget,
       monthsUntilDeadline,
     };
-  }, [personalExpenses, businessExpenses, lifeGoals, occurrencesInMonth]);
+  }, [movements, movementsInMonth, lifeGoals]);
 
-  // Il target mensile della Dashboard segue il target dinamico se >0, altrimenti fallback manuale
   const effectiveMonthlyTarget = dynamicTarget.dynamicGrossTarget > 0
     ? dynamicTarget.dynamicGrossTarget
     : monthlyTarget;
 
+  // ---------- Financial Summary — basato sul Ledger ----------
   const financialSummary = useMemo(() => {
     const now = new Date();
     const year = now.getFullYear();
     const month = now.getMonth();
     const monthNum = month + 1;
 
-    // YTD: incassi dal 1° gennaio dell'anno corrente,
-    // ma mai prima dello start storico (Gennaio 2026)
     const ytdStart = new Date(
       Math.max(year, HISTORY_START_YEAR),
       year > HISTORY_START_YEAR ? 0 : HISTORY_START_MONTH,
@@ -1190,13 +1191,13 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
 
     let gross_monthly = 0;
     let gross_ytd = 0;
-    for (const t of transactions) {
-      if (t.status !== 'Saldato') continue;
-      const d = new Date(t.payment_date);
+    for (const mv of movements) {
+      if (mv.type !== 'credit' || mv.classification !== 'business') continue;
+      const d = new Date(mv.date);
       if (d < ytdStart) continue;
       if (d.getFullYear() !== year) continue;
-      gross_ytd += t.amount;
-      if (d.getMonth() === month) gross_monthly += t.amount;
+      gross_ytd += mv.amount;
+      if (d.getMonth() === month) gross_monthly += mv.amount;
     }
 
     const net_monthly = gross_monthly - (gross_monthly * TAX_RATE);
@@ -1210,92 +1211,47 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
       monthly_target: effectiveMonthlyTarget,
       current_month_number: monthNum,
     };
-  }, [transactions, effectiveMonthlyTarget]);
+  }, [movements, effectiveMonthlyTarget]);
 
-  // Storico mensile a partire da Gennaio 2026 fino al mese corrente.
-  // Il NETTO sottrae per ogni mese: tasse, spese una tantum nel mese,
-  // spese ricorrenti attive in quel mese.
+  // ---------- Monthly Breakdown — basato sul Ledger ----------
   const monthlyBreakdown = useMemo<MonthlyBreakdown[]>(() => {
     const now = new Date();
     const endYear = now.getFullYear();
     const endMonth = now.getMonth();
 
-    // Aggrega lordo per chiave "YYYY-M"
-    const grossMap = new Map<string, number>();
-    for (const t of transactions) {
-      if (t.status !== 'Saldato') continue;
-      const d = new Date(t.payment_date);
-      const y = d.getFullYear();
-      const m = d.getMonth();
-      if (y < HISTORY_START_YEAR) continue;
-      if (y === HISTORY_START_YEAR && m < HISTORY_START_MONTH) continue;
-      const key = `${y}-${m}`;
-      grossMap.set(key, (grossMap.get(key) ?? 0) + t.amount);
-    }
-
-    const sumMonthExpenses = (
-      list: RecurringRow[],
-      y: number, m: number
-    ): number => {
-      const monthStart = new Date(y, m, 1);
-      const monthEnd = new Date(y, m + 1, 0, 23, 59, 59, 999);
-      let total = 0;
-      for (const e of list) {
-        if (e.recurrence_type === 'none') {
-          const start = new Date(e.start_date);
-          if (start >= monthStart && start <= monthEnd) total += e.amount;
-        } else {
-          total += e.amount * occurrencesInMonth(e, y, m);
-        }
-      }
-      return total;
-    };
-
-    const monthIncomes = (y: number, m: number): number => {
-      const monthStart = new Date(y, m, 1);
-      const monthEnd = new Date(y, m + 1, 0, 23, 59, 59, 999);
-      let total = 0;
-      for (const i of personalIncomes) {
-        if (i.recurrence_type && i.recurrence_type !== 'none') {
-          total += i.amount * occurrencesInMonth(
-            { recurrence_type: i.recurrence_type, recurrence_value: i.recurrence_value, start_date: i.date, end_date: undefined, amount: i.amount },
-            y, m,
-          );
-        } else {
-          const d = new Date(i.date);
-          if (d >= monthStart && d <= monthEnd) total += i.amount;
-        }
-      }
-      return total;
-    };
-
     const months: MonthlyBreakdown[] = [];
     let y = HISTORY_START_YEAR;
     let m = HISTORY_START_MONTH;
     while (y < endYear || (y === endYear && m <= endMonth)) {
-      const gross = grossMap.get(`${y}-${m}`) ?? 0;
+      const list = movementsInMonth(y, m);
+      // Phase 28 waterfall:
+      // Gross Revenue = Credit + Business
+      // Business Expenses = Debit + Business
+      // Personal Expenses = Debit + Personal
+      // Personal Incomes = Credit + Personal
+      const gross = list.filter(mv => mv.type === 'credit' && mv.classification === 'business').reduce((s, mv) => s + mv.amount, 0);
+      const biz_expenses = list.filter(mv => mv.type === 'debit' && mv.classification === 'business').reduce((s, mv) => s + mv.amount, 0);
+      const pers_expenses = list.filter(mv => mv.type === 'debit' && mv.classification === 'personal').reduce((s, mv) => s + mv.amount, 0);
+      const pers_incomes = list.filter(mv => mv.type === 'credit' && mv.classification === 'personal').reduce((s, mv) => s + mv.amount, 0);
       const taxes = gross * TAX_RATE;
-      const biz_expenses = sumMonthExpenses(businessExpenses, y, m);
       const net_business = gross - taxes - biz_expenses;
-      const expenses = sumMonthExpenses(personalExpenses, y, m);
-      const incomes = monthIncomes(y, m);
-      const free_cash_flow = net_business + incomes - expenses;
+      const free_cash_flow = net_business + pers_incomes - pers_expenses;
       const label = new Date(y, m, 1).toLocaleDateString('it-IT', { month: 'short', year: 'numeric' });
       months.push({
         year: y, month: m, label,
         gross, taxes,
         business_expenses: biz_expenses,
         net_business,
-        personal_expenses: expenses,
-        personal_incomes: incomes,
+        personal_expenses: pers_expenses,
+        personal_incomes: pers_incomes,
         free_cash_flow,
-        net: free_cash_flow, // backward-compat
+        net: free_cash_flow,
       });
       m += 1;
       if (m > 11) { m = 0; y += 1; }
     }
     return months;
-  }, [transactions, personalExpenses, personalIncomes, businessExpenses, occurrencesInMonth]);
+  }, [movements, movementsInMonth]);
 
   const value: CrmContextValue = {
     clients,
