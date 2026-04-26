@@ -905,10 +905,12 @@ const ClientDetail = () => {
                   {/* Piano Pagamenti */}
                   {clientTransactions.length > 0 && (
                     <div className="space-y-2 pt-2">
-                      <div className="flex items-center justify-between">
-                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Piano Pagamenti</p>
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground truncate">
+                          Pagamenti per <span className="text-foreground">{client.service_sold ?? 'Contratto'}</span>
+                        </p>
                         {totalPending > 0 && (
-                          <p className="text-[10px] font-semibold text-warning">
+                          <p className="text-[10px] font-semibold text-warning shrink-0">
                             In attesa: {formatEuro(totalPending)}
                           </p>
                         )}
