@@ -284,7 +284,9 @@ const ClientDetail = () => {
             ? `Pagamento ricorrente di ${formatEuro(value)} attivato (ogni 28 giorni)`
             : `Pagamento di ${formatEuro(value)} registrato (${payMethod})`
       );
-      setPayAmount('');
+      // After saving, prefill the new remaining balance (or empty if fully paid)
+      const newRemaining = Math.max(0, contractTotal - (totalPaid + value));
+      setPayAmount(newRemaining > 0 ? String(newRemaining) : '');
       setPayServiceId(undefined);
       setPayType('Unica Soluzione');
       setPayInstallments(2);
