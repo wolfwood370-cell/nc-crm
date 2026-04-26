@@ -25,7 +25,7 @@ import {
   GENDERS, Gender, genderLabel,
   PaymentType, PaymentMethod, PAYMENT_METHODS,
   Transaction, TransactionStatus, TRANSACTION_STATUSES,
-  SERVICE_TYPES, SERVICE_GROUPS, ServiceType,
+  SERVICE_GROUPS, ServiceType,
   formatEuro,
 } from '@/types/crm';
 import { baseLeadScore } from '@/lib/leadScore';
