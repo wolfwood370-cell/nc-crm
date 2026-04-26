@@ -6,7 +6,7 @@ import {
   ChurnRisk, Gender, Transaction, PaymentType, PaymentMethod,
   Service, MonthlyBreakdown, HISTORY_START_YEAR, HISTORY_START_MONTH,
   LifeGoal, DynamicTarget,
-  BankAccount, FinancialMovement, UnifiedCategory,
+  BankAccount, FinancialMovement, UnifiedCategory, MovementClassification,
   MovementType, MovementSource, BankAccountType, CategoryScope, CategoryKind,
 } from '@/types/crm';
 import { CrmContext, CrmContextValue } from './crmContext';
