@@ -105,6 +105,107 @@
   .privacy-on .privacy-blur-target { filter: blur(8px) saturate(0.5); }
   .privacy-on .privacy-blur-target:focus-within { filter: none; }
 
+  /* Tech-Premium: Shimmer Button (Magic UI inspired) */
+  .shimmer-button {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    background: linear-gradient(135deg, hsl(217 91% 60%), hsl(190 95% 55%));
+    color: white;
+    box-shadow:
+      0 0 0 1px hsl(190 95% 55% / 0.4),
+      0 8px 24px -6px hsl(217 91% 60% / 0.55),
+      inset 0 1px 0 hsl(0 0% 100% / 0.25);
+    transition: transform 0.2s ease, box-shadow 0.3s ease;
+  }
+  .shimmer-button:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow:
+      0 0 0 1px hsl(190 95% 55% / 0.6),
+      0 12px 32px -6px hsl(217 91% 60% / 0.7),
+      inset 0 1px 0 hsl(0 0% 100% / 0.3);
+  }
+  .shimmer-button::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      110deg,
+      transparent 25%,
+      hsl(0 0% 100% / 0.45) 50%,
+      transparent 75%
+    );
+    transform: translateX(-100%);
+    animation: shimmer-sweep 2.8s ease-in-out infinite;
+    pointer-events: none;
+  }
+  .shimmer-button:disabled::before { animation: none; }
+  @keyframes shimmer-sweep {
+    0% { transform: translateX(-100%); }
+    60%, 100% { transform: translateX(100%); }
+  }
+
+  /* Tech-Premium: Animated gradient border (beam) for AI cards */
+  .ai-beam-border {
+    position: relative;
+    isolation: isolate;
+    background: hsl(var(--card));
+    border-radius: 1rem;
+  }
+  .ai-beam-border::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    border-radius: inherit;
+    background: conic-gradient(
+      from var(--beam-angle, 0deg),
+      transparent 0deg,
+      hsl(217 91% 60% / 0.0) 60deg,
+      hsl(190 95% 55% / 0.85) 110deg,
+      hsl(217 91% 60% / 0.85) 150deg,
+      transparent 220deg,
+      transparent 360deg
+    );
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    animation: beam-rotate 6s linear infinite;
+    pointer-events: none;
+  }
+  @property --beam-angle {
+    syntax: "<angle>";
+    inherits: false;
+    initial-value: 0deg;
+  }
+  @keyframes beam-rotate {
+    to { --beam-angle: 360deg; }
+  }
+
+  /* Tech-Premium: Soft cyan glow halo */
+  .ai-glow-halo {
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    background: radial-gradient(
+      120% 80% at 50% 0%,
+      hsl(190 95% 55% / 0.18),
+      transparent 60%
+    );
+    pointer-events: none;
+  }
+
+  /* Staggered fade-in for bento children */
+  .bento-stagger > * {
+    opacity: 0;
+    animation: fade-in 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+  .bento-stagger > *:nth-child(1) { animation-delay: 0.05s; }
+  .bento-stagger > *:nth-child(2) { animation-delay: 0.15s; }
+  .bento-stagger > *:nth-child(3) { animation-delay: 0.25s; }
+  .bento-stagger > *:nth-child(4) { animation-delay: 0.35s; }
+  .bento-stagger > *:nth-child(5) { animation-delay: 0.45s; }
+
   /* Premium shimmer skeleton */
   .skeleton-shimmer {
     position: relative;
