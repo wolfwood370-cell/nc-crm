@@ -1307,6 +1307,22 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
     updateIncomeCategory: async (id, name) => { await updateIncomeCategoryMutation.mutateAsync({ id, name }); },
     deleteIncomeCategory: async (id) => { await deleteIncomeCategoryMutation.mutateAsync(id); },
     setMonthlyTarget,
+
+    // ============ Phase 28: Unified Ledger ============
+    bankAccounts,
+    movements,
+    unifiedCategories,
+    addMovement: async (m) => { await addMovementMutation.mutateAsync(m); },
+    updateMovement: async (id, patch) => { await updateMovementMutation.mutateAsync({ id, patch }); },
+    deleteMovement: async (id) => { await deleteMovementMutation.mutateAsync(id); },
+    setMovementClassification: async (id, classification) => {
+      await updateMovementMutation.mutateAsync({ id, patch: { classification } });
+    },
+    toggleMovementReviewed: async (id, reviewed) => {
+      await updateMovementMutation.mutateAsync({ id, patch: { is_reviewed: reviewed } });
+    },
+    importMovements: async (rows) => await importMovementsMutation.mutateAsync(rows),
+    addUnifiedCategory: async (name, scope, kind) => await addUnifiedCategoryMutation.mutateAsync({ name, scope, kind }),
   };
 
   return <CrmContext.Provider value={value}>{children}</CrmContext.Provider>;
