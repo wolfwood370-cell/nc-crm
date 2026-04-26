@@ -47,7 +47,7 @@ const ClientDetail = () => {
   const client = clients.find(c => c.id === id);
 
   // Inline payment form state
-  const [payServiceId, setPayServiceId] = useState<string>('');
+  const [payServiceId, setPayServiceId] = useState<string | undefined>(undefined);
   const [payAmount, setPayAmount] = useState('');
   const [payType, setPayType] = useState<PaymentType>('Unica Soluzione');
   const [payInstallments, setPayInstallments] = useState(2);
@@ -718,7 +718,7 @@ const ClientDetail = () => {
                       <Sparkles className="h-3 w-3" /> Servizio (opzionale)
                     </label>
                     <Select
-                      value={payServiceId || undefined}
+                      value={payServiceId}
                       onValueChange={(v) => {
                         setPayServiceId(v);
                         const svc = services.find(s => s.id === v);
