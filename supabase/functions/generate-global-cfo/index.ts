@@ -85,6 +85,13 @@ ${payload.goal ? `- ${payload.goal.title}: € ${payload.goal.current.toFixed(0)
 - Active pipeline volume (€ potenziale): € ${payload.crm.pipelineVolume.toFixed(2)}
 - Active clients: ${payload.crm.activeClients}
 
+## Training Expirations (active clients)
+- Expiring in next 30 days: ${payload.crm.expiringIn30 ?? 0}
+- Expiring in next 60 days: ${payload.crm.expiringIn60 ?? 0}
+${payload.crm.expiringClients && payload.crm.expiringClients.length > 0
+  ? payload.crm.expiringClients.slice(0, 8).map(c => `  • ${c.name}${c.service ? ` (${c.service})` : ''} — ${c.daysLeft ?? '?'}g (${c.end ?? '—'})`).join("\n")
+  : "  • Nessuna scadenza imminente"}
+
 ## Required to hit goal
 - Net needed/month: € ${payload.derived.requiredMonthlyNet.toFixed(2)}
 - Gross needed/month: € ${payload.derived.requiredMonthlyGross.toFixed(2)}
