@@ -24,7 +24,7 @@ export const SERVICE_TYPES: ServiceType[] = [
   'Percorso Premium',
   'Programmazione Avanzata',
   'NC Nutrition',
-  'PT Pack 99€',
+  'PT Pack Premium',
   'Percorso Online',
   'Founders Circle',
   'Altro',
