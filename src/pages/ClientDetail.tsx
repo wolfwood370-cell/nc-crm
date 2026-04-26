@@ -154,6 +154,7 @@ const ClientDetail = () => {
   const [metricName, setMetricName] = useState('');
   const [metricValue, setMetricValue] = useState('');
   const [metricNote, setMetricNote] = useState('');
+  const [formInitialized, setFormInitialized] = useState(false);
 
   useEffect(() => {
     if (client) {
@@ -190,6 +191,7 @@ const ClientDetail = () => {
       setActualPrice(client.actual_price !== undefined && client.actual_price !== null ? String(client.actual_price) : '');
       setTrainingStart(client.training_start_date ? client.training_start_date.slice(0, 10) : '');
       setTrainingEnd(client.training_end_date ? client.training_end_date.slice(0, 10) : '');
+      setFormInitialized(true);
     }
   }, [client]);
 
