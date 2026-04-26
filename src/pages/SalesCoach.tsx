@@ -267,81 +267,102 @@ const SalesCoach = () => {
                 Ultimo report generato il {new Date(reportDate).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })} alle {new Date(reportDate).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
               </div>
             )}
-            {/* Sintesi */}
-            <div className="rounded-xl border border-primary/30 bg-primary/5 p-3">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-primary mb-1">Sintesi · {analyzedCount} casi</p>
-              <p className="text-sm text-foreground">{report.sintesi}</p>
-            </div>
 
-            {/* Friction Points (top 2) */}
-            {report.friction_points && report.friction_points.length > 0 && (
-              <div className="rounded-xl border border-warning/40 bg-warning/5 p-3">
+            {/* Bento Grid — Tech-Premium AI Layout */}
+            <div className="bento-stagger grid grid-cols-1 md:grid-cols-6 gap-3 auto-rows-min">
+              {/* Sintesi — full width hero */}
+              <div className="md:col-span-6 ai-beam-border p-[1px]">
+                <div className="relative rounded-2xl bg-gradient-to-br from-card via-card to-accent/5 p-4 overflow-hidden">
+                  <div className="ai-glow-halo" aria-hidden />
+                  <div className="relative">
+                    <p className="text-[10px] font-bold uppercase tracking-wider bg-gradient-to-r from-accent to-primary-glow bg-clip-text text-transparent mb-1">
+                      Sintesi · {analyzedCount} casi
+                    </p>
+                    <p className="text-sm text-foreground leading-relaxed">{report.sintesi}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Friction Points — half width */}
+              {report.friction_points && report.friction_points.length > 0 && (
+                <div className="md:col-span-6 rounded-2xl border border-warning/40 bg-warning/5 p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <AlertCircle className="h-4 w-4 text-warning" />
+                    <p className="text-xs font-bold uppercase tracking-wider text-foreground">Top 2 Punti di Attrito</p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {report.friction_points.slice(0, 2).map((fp, i) => (
+                      <div key={i} className="rounded-lg bg-card border border-border p-2.5">
+                        <p className="text-xs font-bold text-foreground">{fp.titolo}</p>
+                        <p className="text-[11px] text-muted-foreground mt-1 leading-snug">{fp.descrizione}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Perché perdiamo */}
+              <div className="md:col-span-3 rounded-2xl border border-border bg-card p-3">
                 <div className="flex items-center gap-2 mb-2">
-                  <AlertCircle className="h-4 w-4 text-warning" />
-                  <p className="text-xs font-bold uppercase tracking-wider text-foreground">Top 2 Punti di Attrito</p>
+                  <TrendingDown className="h-4 w-4 text-destructive" />
+                  <p className="text-xs font-bold uppercase tracking-wider text-foreground">Perché stiamo perdendo</p>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {report.friction_points.slice(0, 2).map((fp, i) => (
-                    <div key={i} className="rounded-lg bg-card border border-border p-2.5">
-                      <p className="text-xs font-bold text-foreground">{fp.titolo}</p>
-                      <p className="text-[11px] text-muted-foreground mt-1 leading-snug">{fp.descrizione}</p>
-                    </div>
+                <ul className="space-y-2">
+                  {report.perche_perdiamo.map((b, i) => (
+                    <li key={i} className="flex gap-2 text-sm text-foreground">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-destructive/15 text-destructive text-[10px] font-bold">
+                        {i + 1}
+                      </span>
+                      <span className="flex-1">{b}</span>
+                    </li>
                   ))}
-                </div>
+                </ul>
               </div>
-            )}
 
-            {/* Perché perdiamo */}
-            <div className="rounded-xl border border-border bg-card p-3">
-              <div className="flex items-center gap-2 mb-2">
-                <TrendingDown className="h-4 w-4 text-destructive" />
-                <p className="text-xs font-bold uppercase tracking-wider text-foreground">Perché stiamo perdendo</p>
-              </div>
-              <ul className="space-y-2">
-                {report.perche_perdiamo.map((b, i) => (
-                  <li key={i} className="flex gap-2 text-sm text-foreground">
-                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-destructive/15 text-destructive text-[10px] font-bold">
-                      {i + 1}
-                    </span>
-                    <span className="flex-1">{b}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Azioni correttive */}
-            <div className="rounded-xl border border-primary/30 bg-card p-3">
-              <div className="flex items-center gap-2 mb-2">
-                <Lightbulb className="h-4 w-4 text-primary" />
-                <p className="text-xs font-bold uppercase tracking-wider text-foreground">Azioni per la prossima settimana</p>
-              </div>
-              <ul className="space-y-2">
-                {report.azioni_correttive.map((b, i) => (
-                  <li key={i} className="flex gap-2 text-sm text-foreground">
-                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary text-[10px] font-bold">
-                      {i + 1}
-                    </span>
-                    <span className="flex-1">{b}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Entrepreneurial Nudge — Coach Insight Premium Card */}
-            {report.entrepreneurial_nudge && (
-              <div className="relative overflow-hidden rounded-2xl border-2 border-primary/40 bg-gradient-to-br from-primary/10 via-accent/5 to-primary/15 p-4 shadow-glow">
-                <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-primary/20 blur-2xl" aria-hidden />
-                <div className="relative flex items-start gap-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-glow">
-                    <Rocket className="h-4 w-4" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-primary mb-1">Coach Insight · Imprenditoriale</p>
-                    <p className="text-sm text-foreground leading-relaxed font-medium">{report.entrepreneurial_nudge}</p>
+              {/* Azioni correttive */}
+              <div className="md:col-span-3 ai-beam-border p-[1px]">
+                <div className="relative rounded-2xl bg-card p-3 overflow-hidden h-full">
+                  <div className="ai-glow-halo" aria-hidden />
+                  <div className="relative">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Lightbulb className="h-4 w-4 text-accent" />
+                      <p className="text-xs font-bold uppercase tracking-wider text-foreground">Azioni per la prossima settimana</p>
+                    </div>
+                    <ul className="space-y-2">
+                      {report.azioni_correttive.map((b, i) => (
+                        <li key={i} className="flex gap-2 text-sm text-foreground">
+                          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-accent to-primary-glow text-white text-[10px] font-bold">
+                            {i + 1}
+                          </span>
+                          <span className="flex-1">{b}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 </div>
               </div>
-            )}
+
+              {/* Entrepreneurial Nudge — full width premium */}
+              {report.entrepreneurial_nudge && (
+                <div className="md:col-span-6 ai-beam-border p-[1px]">
+                  <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-accent/10 via-card to-primary/10 p-4">
+                    <div className="absolute -right-4 -top-4 h-32 w-32 rounded-full bg-accent/25 blur-3xl" aria-hidden />
+                    <div className="absolute -left-6 -bottom-6 h-24 w-24 rounded-full bg-primary-glow/20 blur-3xl" aria-hidden />
+                    <div className="relative flex items-start gap-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-accent to-primary-glow text-white shadow-glow">
+                        <Rocket className="h-4 w-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[10px] font-bold uppercase tracking-wider bg-gradient-to-r from-accent to-primary-glow bg-clip-text text-transparent mb-1">
+                          Coach Insight · Imprenditoriale
+                        </p>
+                        <p className="text-sm text-foreground leading-relaxed font-medium">{report.entrepreneurial_nudge}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
