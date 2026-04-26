@@ -16,11 +16,14 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Plus, Trash2, Pencil, Target, Wallet, TrendingUp, Sparkles, Ban, Settings2, Check, X, ArrowDownToLine, Briefcase, ChevronDown } from 'lucide-react';
+import { Plus, Trash2, Pencil, Target, Wallet, TrendingUp, Sparkles, Ban, Settings2, Check, X, ArrowDownToLine, Briefcase, ChevronDown, BookOpen, Upload } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { PrivacyMask } from '@/components/crm/PrivacyMask';
 import { toast } from 'sonner';
 import { todayIso, dateInputToIso } from '@/lib/date';
+import { BankAccountCards } from '@/components/finance/BankAccountCards';
+import { LedgerTable } from '@/components/finance/LedgerTable';
+import { MovementImportDialog } from '@/components/finance/MovementImportDialog';
 
 const NEW_CATEGORY_SENTINEL = '__new__';
 
