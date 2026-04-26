@@ -15,6 +15,7 @@ import ClientDetail from "./pages/ClientDetail";
 import SalesCoach from "./pages/SalesCoach";
 import SalesStrategy from "./pages/SalesStrategy";
 import FinancialOS from "./pages/FinancialOS";
+import FinanceCoach from "./pages/FinanceCoach";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound.tsx";
@@ -41,6 +42,7 @@ const App = () => (
                   <Route path="/coach" element={<SalesCoach />} />
                   <Route path="/strategy" element={<SalesStrategy />} />
                   <Route path="/finance" element={<FinancialOS />} />
+                  <Route path="/finance-coach" element={<FinanceCoach />} />
                 </Route>
                 <Route path="*" element={<NotFound />} />
               </Routes>
