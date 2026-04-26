@@ -643,8 +643,13 @@ const ClientDetail = () => {
                       <SelectValue placeholder="Seleziona servizio…" />
                     </SelectTrigger>
                     <SelectContent>
-                      {SERVICE_TYPES.map(s => (
-                        <SelectItem key={s} value={s}>{s}</SelectItem>
+                      {SERVICE_GROUPS.map(group => (
+                        <SelectGroup key={group.label}>
+                          <SelectLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">{group.label}</SelectLabel>
+                          {group.items.map(s => (
+                            <SelectItem key={s} value={s}>{s}</SelectItem>
+                          ))}
+                        </SelectGroup>
                       ))}
                     </SelectContent>
                   </Select>
@@ -664,8 +669,33 @@ const ClientDetail = () => {
                     className="h-12 rounded-xl bg-card border border-border text-base font-semibold"
                   />
                 </div>
+
+                {/* Periodo Percorso */}
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <CalendarClock className="h-3 w-3" /> Inizio Percorso
+                  </label>
+                  <Input
+                    type="date"
+                    value={trainingStart}
+                    onChange={(e) => setTrainingStart(e.target.value)}
+                    className="h-12 rounded-xl bg-card border border-border text-sm font-semibold"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <CalendarClock className="h-3 w-3" /> Fine Percorso
+                  </label>
+                  <Input
+                    type="date"
+                    value={trainingEnd}
+                    onChange={(e) => setTrainingEnd(e.target.value)}
+                    className="h-12 rounded-xl bg-card border border-border text-sm font-semibold"
+                  />
+                </div>
+
                 <p className="sm:col-span-2 text-[10px] text-muted-foreground">
-                  Indipendente dalla fonte di acquisizione. Premi "Salva profilo" in fondo per registrare.
+                  Servizio e periodo sono indipendenti dalla fonte di acquisizione. Premi "Salva profilo" in fondo.
                 </p>
               </div>
 
