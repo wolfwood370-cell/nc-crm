@@ -342,7 +342,7 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
     queryFn: async (): Promise<FinancialMovement[]> => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
-        .from('financial_movements').select('*').order('date', { ascending: false }).limit(5000);
+        .from('financial_movements').select('*').order('date', { ascending: false }).limit(20000);
       if (error) throw error;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return (data as any[]).map(r => ({
@@ -1122,17 +1122,22 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
   // ---------- Dynamic Target (Adaptive Buffer) — basato sul Ledger ----------
   const dynamicTarget = useMemo<DynamicTarget>(() => {
     const now = new Date();
-    const y = now.getFullYear();
-    const m = now.getMonth();
 
-    // Baseline: spese ricorrenti del mese corrente (dal ledger)
-    const thisMonth = movementsInMonth(y, m);
-    const totalRecurringExpenses = thisMonth
-      .filter(mv => mv.type === 'debit' && mv.classification === 'personal' && mv.is_recurring)
-      .reduce((s, mv) => s + mv.amount, 0);
-    const totalRecurringBusinessExpenses = thisMonth
-      .filter(mv => mv.type === 'debit' && mv.classification === 'business' && mv.is_recurring)
-      .reduce((s, mv) => s + mv.amount, 0);
+    // Baseline: media mensile dei movimenti ricorrenti negli ultimi 3 mesi completi.
+    // Evita di sottostimare il mese corrente quando le ricorrenze devono ancora arrivare.
+    const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1);
+    const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const recurringWindow = movements.filter(mv => {
+      if (!mv.is_recurring || mv.type !== 'debit') return false;
+      const d = new Date(mv.date);
+      return d >= threeMonthsAgo && d < startOfCurrentMonth;
+    });
+    const totalRecurringExpenses = recurringWindow
+      .filter(mv => mv.classification === 'personal')
+      .reduce((s, mv) => s + mv.amount, 0) / 3;
+    const totalRecurringBusinessExpenses = recurringWindow
+      .filter(mv => mv.classification === 'business')
+      .reduce((s, mv) => s + mv.amount, 0) / 3;
     const fixedBaseline = totalRecurringExpenses + totalRecurringBusinessExpenses;
 
     // Adaptive Buffer: spese non-ricorrenti ultimi 90gg / 3
@@ -1170,7 +1175,7 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
       dynamicGrossTarget,
       monthsUntilDeadline,
     };
-  }, [movements, movementsInMonth, lifeGoals]);
+  }, [movements, lifeGoals]);
 
   const effectiveMonthlyTarget = dynamicTarget.dynamicGrossTarget > 0
     ? dynamicTarget.dynamicGrossTarget
