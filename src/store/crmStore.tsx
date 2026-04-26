@@ -168,30 +168,6 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
     },
   });
 
-  const { data: personalExpenses = [] } = useQuery({
-    queryKey: ['crm', 'personal_expenses'],
-    queryFn: async (): Promise<PersonalExpense[]> => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any)
-        .from('personal_expenses')
-        .select('*')
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return (data as any[]).map((r) => ({
-        id: r.id,
-        name: r.name,
-        amount: Number(r.amount),
-        is_recurring: Boolean(r.is_recurring),
-        recurrence_type: ((r.recurrence_type as RecurrenceType) ?? (r.is_recurring ? 'fixed_day' : 'none')),
-        recurrence_value: r.recurrence_value ?? undefined,
-        category: r.category,
-        created_at: r.created_at,
-        start_date: r.start_date ?? r.created_at,
-        end_date: r.end_date ?? undefined,
-      }));
-    },
-  });
 
   const { data: lifeGoals = [] } = useQuery({
     queryKey: ['crm', 'life_goals'],
@@ -215,96 +191,6 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
     },
   });
 
-  const { data: expenseCategories = [] } = useQuery({
-    queryKey: ['crm', 'expense_categories'],
-    queryFn: async (): Promise<ExpenseCategory[]> => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any)
-        .from('expense_categories')
-        .select('*')
-        .order('name', { ascending: true });
-      if (error) throw error;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return (data as any[]).map(r => ({ id: r.id, name: r.name, created_at: r.created_at }));
-    },
-  });
-
-  const { data: businessExpenseCategories = [] } = useQuery({
-    queryKey: ['crm', 'business_expense_categories'],
-    queryFn: async (): Promise<BusinessExpenseCategory[]> => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any)
-        .from('business_expense_categories')
-        .select('*')
-        .order('name', { ascending: true });
-      if (error) throw error;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return (data as any[]).map(r => ({ id: r.id, name: r.name, created_at: r.created_at }));
-    },
-  });
-
-  const { data: incomeCategories = [] } = useQuery({
-    queryKey: ['crm', 'income_categories'],
-    queryFn: async (): Promise<IncomeCategory[]> => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any)
-        .from('income_categories')
-        .select('*')
-        .order('name', { ascending: true });
-      if (error) throw error;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return (data as any[]).map(r => ({ id: r.id, name: r.name, created_at: r.created_at }));
-    },
-  });
-
-  const { data: personalIncomes = [] } = useQuery({
-    queryKey: ['crm', 'personal_incomes'],
-    queryFn: async (): Promise<PersonalIncome[]> => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any)
-        .from('personal_incomes')
-        .select('*')
-        .order('date', { ascending: false });
-      if (error) throw error;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return (data as any[]).map(r => ({
-        id: r.id,
-        name: r.name,
-        amount: Number(r.amount),
-        date: r.date,
-        category: r.category ?? 'Altro',
-        created_at: r.created_at,
-        recurrence_type: ((r.recurrence_type as RecurrenceType) ?? 'none'),
-        recurrence_value: r.recurrence_value ?? undefined,
-        end_date: r.end_date ?? undefined,
-      }));
-    },
-  });
-
-  const { data: businessExpenses = [] } = useQuery({
-    queryKey: ['crm', 'business_expenses'],
-    queryFn: async (): Promise<BusinessExpense[]> => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any)
-        .from('business_expenses')
-        .select('*')
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return (data as any[]).map((r) => ({
-        id: r.id,
-        name: r.name,
-        amount: Number(r.amount),
-        is_recurring: Boolean(r.is_recurring),
-        recurrence_type: ((r.recurrence_type as RecurrenceType) ?? (r.is_recurring ? 'fixed_day' : 'none')),
-        recurrence_value: r.recurrence_value ?? undefined,
-        category: r.category,
-        created_at: r.created_at,
-        start_date: r.start_date ?? r.created_at,
-        end_date: r.end_date ?? undefined,
-      }));
-    },
-  });
 
   // ============ Phase 28: Unified Ledger queries ============
   const { data: bankAccounts = [] } = useQuery({
