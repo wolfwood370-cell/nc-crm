@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useCrm } from '@/store/useCrm';
 import {
-  formatEuro, FinancialMovement, MovementClassification,
+  formatEuro, FinancialMovement, MovementClassification, MovementRecurrenceType,
 } from '@/types/crm';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Switch } from '@/components/ui/switch';
@@ -11,9 +11,10 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Check, Search, X, ArrowUp, ArrowDown } from 'lucide-react';
+import { Trash2, Check, Search, X, ArrowUp, ArrowDown, Pencil } from 'lucide-react';
 import { PrivacyMask } from '@/components/crm/PrivacyMask';
 import { cn } from '@/lib/utils';
+import { RecurrencePopover } from './RecurrencePopover';
 
 interface Props {
   year: number;
