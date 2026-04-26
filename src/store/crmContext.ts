@@ -3,6 +3,7 @@ import {
   Client, FinancialSummary, MonthlyBreakdown, PipelineStage, RoiMetric,
   Service, Transaction, PersonalExpense, LifeGoal, DynamicTarget, ExpenseCategory,
   PersonalIncome, BusinessExpense, BusinessExpenseCategory, IncomeCategory,
+  BankAccount, FinancialMovement, UnifiedCategory, MovementClassification,
 } from '@/types/crm';
 
 export interface CrmContextValue {
