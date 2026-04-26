@@ -74,6 +74,7 @@ export const MovementImportDialog = ({ open, onOpenChange }: Props) => {
         is_recurring: false,
         is_reviewed: false,
         external_ref: r.external_ref,
+        recurrence_type: 'none',
       })));
       toast.success(`Importati ${n} movimenti su ${account?.name}.`);
       fullReset();
