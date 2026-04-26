@@ -8,6 +8,7 @@ import {
   LifeGoal, DynamicTarget,
   BankAccount, FinancialMovement, UnifiedCategory, MovementClassification,
   MovementType, MovementSource, BankAccountType, CategoryScope, CategoryKind,
+  MovementRecurrenceType,
 } from '@/types/crm';
 import { CrmContext, CrmContextValue } from './crmContext';
 
