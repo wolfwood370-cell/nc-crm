@@ -24,7 +24,14 @@ export const computeContractEndDate = (
   if (service && SHORT_DURATION_SERVICES.includes(service)) {
     end.setUTCDate(end.getUTCDate() + 28);
   } else {
-    end.setUTCMonth(end.getUTCMonth() + months);
+    // Add months while clamping the day so e.g. 31 Jan + 1m -> 28/29 Feb
+    // (avoids JS overflow that would land on March 3rd).
+    const targetMonth = end.getUTCMonth() + months;
+    const targetYear = end.getUTCFullYear() + Math.floor(targetMonth / 12);
+    const normalizedMonth = ((targetMonth % 12) + 12) % 12;
+    const lastDayOfTarget = new Date(Date.UTC(targetYear, normalizedMonth + 1, 0)).getUTCDate();
+    const clampedDay = Math.min(day, lastDayOfTarget);
+    end.setUTCFullYear(targetYear, normalizedMonth, clampedDay);
   }
 
   return `${end.getUTCFullYear()}-${String(end.getUTCMonth() + 1).padStart(2, '0')}-${String(end.getUTCDate()).padStart(2, '0')}`;
