@@ -522,6 +522,56 @@ export default function FinanceCoach() {
           </div>
         </div>
 
+        {/* KPI Hero Cards — Obiettivo Mensile + Target Lead */}
+        <div className="md:col-span-3 ai-beam-border p-[1px]">
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-card via-card to-primary/10 p-4 h-full">
+            <div className="absolute -right-6 -top-6 h-28 w-28 rounded-full bg-primary/25 blur-3xl" aria-hidden />
+            <div className="relative flex items-start gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-glow text-white shadow-glow">
+                <TargetIcon className="h-4 w-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  Obiettivo Mensile (Netto)
+                </p>
+                <p className="mt-1 text-2xl md:text-3xl font-bold tabular-nums text-foreground">
+                  <PrivacyMask>{formatEuro(sim.requiredMonthlyNet)}</PrivacyMask>
+                </p>
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  Lordo {formatEuro(sim.requiredMonthlyGross)} · {sim.monthsLeft.toFixed(1)} mesi
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="md:col-span-3 ai-beam-border p-[1px]">
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-card via-card to-accent/10 p-4 h-full">
+            <div className="absolute -right-6 -top-6 h-28 w-28 rounded-full bg-accent/25 blur-3xl" aria-hidden />
+            <div className="relative flex items-start gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-accent to-primary-glow text-white shadow-glow">
+                <Users className="h-4 w-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  Target Lead / Mese
+                </p>
+                <p className={cn(
+                  "mt-1 text-2xl md:text-3xl font-bold tabular-nums",
+                  sim.isUnrealistic ? "text-rose-500" : "text-foreground"
+                )}>
+                  {sim.requiredLeadsPerMonth > 0 ? sim.requiredLeadsPerMonth.toFixed(1) : 'N/A'}
+                </p>
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  {sim.effectiveTicket > 0
+                    ? `${sim.requiredClientsPerMonth.toFixed(1)} clienti · ticket ${formatEuro(sim.effectiveTicket)}`
+                    : 'Imposta un ticket medio per stimare i lead'}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Briefing body — structured Card */}
         <div className="md:col-span-6 ai-beam-border p-[1px]">
           <Card className="relative overflow-hidden rounded-2xl border-0 bg-card min-h-[200px]">
