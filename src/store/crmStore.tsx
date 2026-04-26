@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, ReactNode } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -909,7 +909,7 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
     end_date?: string;
     amount: number;
   };
-  const occurrencesInMonth = (e: RecurringRow, y: number, m: number): number => {
+  const occurrencesInMonth = useCallback((e: RecurringRow, y: number, m: number): number => {
     const monthStart = new Date(y, m, 1);
     const monthEnd = new Date(y, m + 1, 0, 23, 59, 59, 999);
     const lastDay = monthEnd.getDate();
@@ -938,7 +938,7 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
       return count;
     }
     return 0;
-  };
+  }, []);
 
   // ---------- Dynamic Target (Adaptive Buffer) ----------
   const dynamicTarget = useMemo<DynamicTarget>(() => {
@@ -1000,7 +1000,7 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
       dynamicGrossTarget,
       monthsUntilDeadline,
     };
-  }, [personalExpenses, businessExpenses, lifeGoals]);
+  }, [personalExpenses, businessExpenses, lifeGoals, occurrencesInMonth]);
 
   // Il target mensile della Dashboard segue il target dinamico se >0, altrimenti fallback manuale
   const effectiveMonthlyTarget = dynamicTarget.dynamicGrossTarget > 0
@@ -1128,7 +1128,7 @@ export const CrmProvider = ({ children }: { children: ReactNode }) => {
       if (m > 11) { m = 0; y += 1; }
     }
     return months;
-  }, [transactions, personalExpenses, personalIncomes, businessExpenses]);
+  }, [transactions, personalExpenses, personalIncomes, businessExpenses, occurrencesInMonth]);
 
   const value: CrmContextValue = {
     clients,
