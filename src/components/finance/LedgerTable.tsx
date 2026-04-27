@@ -106,6 +106,16 @@ export const LedgerTable = ({ year, month }: Props) => {
           Da revisionare
         </Button>
 
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setIsCategoryManagerOpen(true)}
+          className="h-9 text-xs gap-1.5"
+        >
+          <Tags className="h-3.5 w-3.5" />
+          Gestisci Categorie
+        </Button>
+
         <div className="text-xs text-muted-foreground font-mono ml-auto">
           {filtered.length} movimenti
         </div>
