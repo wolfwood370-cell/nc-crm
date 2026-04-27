@@ -9,11 +9,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  SelectGroup, SelectLabel, SelectSeparator,
 } from '@/components/ui/select';
-import { Trash2, Check, Search, X, ArrowUp, ArrowDown, Pencil } from 'lucide-react';
+import { Trash2, Check, Search, X, ArrowUp, ArrowDown, Pencil, Tags, Plus } from 'lucide-react';
 import { PrivacyMask } from '@/components/crm/PrivacyMask';
 import { cn } from '@/lib/utils';
 import { RecurrencePopover } from './RecurrencePopover';
+import { CategoryManagerDialog } from './CategoryManagerDialog';
 
 interface Props {
   year: number;
@@ -30,6 +32,15 @@ export const LedgerTable = ({ year, month }: Props) => {
   const [typeFilter, setTypeFilter] = useState<'all' | 'credit' | 'debit'>('all');
   const [search, setSearch] = useState('');
   const [showOnlyUnreviewed, setShowOnlyUnreviewed] = useState(false);
+  const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
+
+  // Group categories by scope so the user can always see and select any category.
+  const groupedCategories = useMemo(() => {
+    const business = unifiedCategories.filter(c => c.scope === 'business');
+    const personal = unifiedCategories.filter(c => c.scope === 'personal');
+    const both = unifiedCategories.filter(c => c.scope === 'both');
+    return { business, personal, both };
+  }, [unifiedCategories]);
 
   const filtered = useMemo<FinancialMovement[]>(() => {
     const monthStart = new Date(year, month, 1).getTime();
@@ -95,6 +106,16 @@ export const LedgerTable = ({ year, month }: Props) => {
           Da revisionare
         </Button>
 
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setIsCategoryManagerOpen(true)}
+          className="h-9 text-xs gap-1.5"
+        >
+          <Tags className="h-3.5 w-3.5" />
+          Gestisci Categorie
+        </Button>
+
         <div className="text-xs text-muted-foreground font-mono ml-auto">
           {filtered.length} movimenti
         </div>
@@ -151,17 +172,45 @@ export const LedgerTable = ({ year, month }: Props) => {
                           <span className="text-[11px]">{categoryName(mv.category_id)}</span>
                         </SelectValue>
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="max-h-[320px]">
                         <SelectItem value="none">—</SelectItem>
-                        {unifiedCategories
-                          .filter(c =>
-                            c.scope === 'both' ||
-                            c.scope === mv.classification ||
-                            c.id === mv.category_id
-                          )
-                          .map(c => (
-                            <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                          ))}
+                        {groupedCategories.both.length > 0 && (
+                          <SelectGroup>
+                            <SelectLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">Entrambi</SelectLabel>
+                            {groupedCategories.both.map(c => (
+                              <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                            ))}
+                          </SelectGroup>
+                        )}
+                        {groupedCategories.business.length > 0 && (
+                          <SelectGroup>
+                            <SelectLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">Aziendale</SelectLabel>
+                            {groupedCategories.business.map(c => (
+                              <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                            ))}
+                          </SelectGroup>
+                        )}
+                        {groupedCategories.personal.length > 0 && (
+                          <SelectGroup>
+                            <SelectLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">Personale</SelectLabel>
+                            {groupedCategories.personal.map(c => (
+                              <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                            ))}
+                          </SelectGroup>
+                        )}
+                        <SelectSeparator />
+                        <button
+                          type="button"
+                          onMouseDown={(e) => {
+                            // mouseDown beats Radix's outside-click close, so the dialog opens reliably
+                            e.preventDefault();
+                            setIsCategoryManagerOpen(true);
+                          }}
+                          className="relative flex w-full items-center gap-2 rounded-sm py-1.5 pl-2 pr-2 text-xs font-medium text-primary hover:bg-primary/10 transition-colors"
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                          Aggiungi / Modifica Categoria
+                        </button>
                       </SelectContent>
                     </Select>
                   </TableCell>
@@ -332,6 +381,11 @@ export const LedgerTable = ({ year, month }: Props) => {
           </div>
         ))}
       </div>
+
+      <CategoryManagerDialog
+        open={isCategoryManagerOpen}
+        onOpenChange={setIsCategoryManagerOpen}
+      />
     </div>
   );
 };
