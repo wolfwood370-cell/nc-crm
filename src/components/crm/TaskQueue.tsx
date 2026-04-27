@@ -1,5 +1,5 @@
 import { useCrm, daysSince } from '@/store/useCrm';
-import { AlertTriangle, Clock, Flame, Trophy, Zap, Target, Receipt, AlarmClock } from 'lucide-react';
+import { AlertTriangle, Clock, Flame, Trophy, Zap, Target, Receipt, AlarmClock, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { formatEuro } from '@/types/crm';
 
