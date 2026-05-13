@@ -64,6 +64,32 @@
 
     --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   }
+
+  /* Glassmorphic 2.0 — premium dark surface tokens (shared across :root and .dark) */
+  :root,
+  .dark {
+    --surface-container: 145 11% 14%;
+    --surface-container-high: 145 10% 16%;
+    --on-surface: 120 11% 88%;
+    --on-surface-variant: 137 13% 76%;
+    --primary-container: 160 84% 39%;
+    --on-primary-container: 159 100% 13%;
+    --error: 3 100% 83%;
+  }
+
+  .dark {
+    --primary: 155 70% 59%;
+  }
+}
+
+@layer components {
+  .glass-panel {
+    @apply backdrop-blur-xl border border-white/10 shadow-lg;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%);
+  }
+  .glow-border {
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  }
 }
 
 @layer base {

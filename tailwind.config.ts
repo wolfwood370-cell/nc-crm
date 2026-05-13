@@ -57,6 +57,20 @@ export default {
           referral: "hsl(var(--source-referral))",
           social: "hsl(var(--source-social))",
         },
+        surface: {
+          DEFAULT: "hsl(var(--background))",
+          container: "hsl(var(--surface-container))",
+          "container-high": "hsl(var(--surface-container-high))",
+        },
+        "on-surface": {
+          DEFAULT: "hsl(var(--on-surface))",
+          variant: "hsl(var(--on-surface-variant))",
+        },
+        "primary-container": {
+          DEFAULT: "hsl(var(--primary-container))",
+          foreground: "hsl(var(--on-primary-container))",
+        },
+        error: "hsl(var(--error))",
         stage: {
           lead: "hsl(var(--stage-lead))",
           nurture: "hsl(var(--stage-nurture))",
