@@ -18,13 +18,14 @@ export default {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         primary: {
-          DEFAULT: "hsl(var(--primary))",
+          DEFAULT: "#4edea3",
           foreground: "hsl(var(--primary-foreground))",
           glow: "hsl(var(--primary-glow))",
         },
         secondary: {
-          DEFAULT: "hsl(var(--secondary))",
+          DEFAULT: "#adc6ff",
           foreground: "hsl(var(--secondary-foreground))",
+          container: "#0566d9",
         },
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
