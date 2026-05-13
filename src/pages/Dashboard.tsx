@@ -134,7 +134,7 @@ const Dashboard = () => {
     .toUpperCase();
 
   return (
-    <div className="dark px-4 md:px-10 pt-6 pb-10 space-y-6 animate-fade-in">
+    <div className="dark bg-surface text-on-surface min-h-screen px-4 md:px-10 pt-6 pb-10 space-y-6 animate-fade-in">
       {/* Header */}
       <header className="mb-2">
         <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-on-surface-variant mb-2">

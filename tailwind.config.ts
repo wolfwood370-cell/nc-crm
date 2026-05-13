@@ -18,13 +18,14 @@ export default {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         primary: {
-          DEFAULT: "hsl(var(--primary))",
+          DEFAULT: "#4edea3",
           foreground: "hsl(var(--primary-foreground))",
           glow: "hsl(var(--primary-glow))",
         },
         secondary: {
-          DEFAULT: "hsl(var(--secondary))",
+          DEFAULT: "#adc6ff",
           foreground: "hsl(var(--secondary-foreground))",
+          container: "#0566d9",
         },
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
@@ -58,19 +59,26 @@ export default {
           social: "hsl(var(--source-social))",
         },
         surface: {
-          DEFAULT: "hsl(var(--background))",
-          container: "hsl(var(--surface-container))",
-          "container-high": "hsl(var(--surface-container-high))",
+          DEFAULT: "#0e1511",
+          variant: "#2f3632",
+          container: "#1a211d",
+          "container-high": "#242c27",
         },
+        "surface-variant": "#2f3632",
         "on-surface": {
-          DEFAULT: "hsl(var(--on-surface))",
-          variant: "hsl(var(--on-surface-variant))",
+          DEFAULT: "#dde4dd",
+          variant: "#bbcabf",
         },
         "primary-container": {
-          DEFAULT: "hsl(var(--primary-container))",
-          foreground: "hsl(var(--on-primary-container))",
+          DEFAULT: "#10b981",
+          foreground: "#00422b",
         },
-        error: "hsl(var(--error))",
+        "on-primary-container": "#00422b",
+        error: {
+          DEFAULT: "#ffb4ab",
+          container: "#93000a",
+        },
+        "error-container": "#93000a",
         stage: {
           lead: "hsl(var(--stage-lead))",
           nurture: "hsl(var(--stage-nurture))",
