@@ -36,7 +36,7 @@ const priorityStyles: Record<Priority, { border: string; iconWrap: string; subti
     subtitle: 'text-on-surface-variant',
   },
   low: {
-    border: 'border-l-outline-variant',
+    border: 'border-l-white/10',
     iconWrap: 'bg-white/5 text-on-surface-variant',
     subtitle: 'text-on-surface-variant',
   },
