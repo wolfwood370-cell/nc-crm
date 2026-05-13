@@ -27,22 +27,22 @@ export const MonthlyHistory = () => {
   }));
 
   return (
-    <div className="rounded-3xl border border-border bg-card p-5 shadow-card">
+    <div className="bg-surface-container/30 rounded-2xl glass-panel border-white/10 shadow-none p-5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary">
             <CalendarRange className="h-4 w-4" />
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Storico Mensile · Waterfall</p>
-            <p className="text-[11px] text-muted-foreground">Lordo → Utile aziendale → Cash Flow libero</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-on-surface font-headline-sm">Storico Mensile · Waterfall</p>
+            <p className="text-[11px] text-on-surface-variant font-body-sm">Lordo → Utile aziendale → Cash Flow libero</p>
           </div>
         </div>
       </div>
 
       {monthlyBreakdown.length === 0 ? (
-        <div className="mt-4 rounded-xl border border-dashed border-border p-6 text-center">
-          <p className="text-xs text-muted-foreground">Nessun mese disponibile.</p>
+        <div className="mt-4 rounded-xl border border-dashed border-white/10 p-6 text-center">
+          <p className="text-xs text-on-surface-variant">Nessun mese disponibile.</p>
         </div>
       ) : (
         <>
@@ -50,17 +50,18 @@ export const MonthlyHistory = () => {
           <div className="mt-4 h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                <XAxis dataKey="label" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
-                <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} tickFormatter={(v) => `${Math.round(v / 1000)}k`} />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" vertical={false} />
+                <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#bbcabf' }} />
+                <YAxis tick={{ fontSize: 10, fill: '#bbcabf' }} tickFormatter={(v) => `${Math.round(v / 1000)}k`} />
                 <Tooltip
                   contentStyle={{
-                    background: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
+                    background: '#1a211d',
+                    border: '1px solid rgba(255,255,255,0.1)',
                     borderRadius: 12,
                     fontSize: 12,
                   }}
                   formatter={(v: number) => formatEuro(v)}
+                  labelStyle={{ color: '#dde4dd', fontWeight: 600 }}
                 />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
                 <Bar dataKey="Lordo" fill={COLOR_GROSS} radius={[6, 6, 0, 0]} />
@@ -78,36 +79,36 @@ export const MonthlyHistory = () => {
             {rows.map(m => {
               const positive = m.free_cash_flow >= 0;
               return (
-                <div key={`${m.year}-${m.month}`} className="rounded-xl border border-border bg-secondary/40 p-3">
+                <div key={`${m.year}-${m.month}`} className="rounded-xl border border-white/10 bg-surface-container-high/40 p-3">
                   <div className="flex items-baseline justify-between gap-2">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-foreground">{m.label}</p>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-on-surface">{m.label}</p>
                     <p className={`text-xs font-bold ${positive ? 'text-primary' : 'text-destructive'}`}>
                       Cash Flow: <PrivacyMask>{formatEuro(m.free_cash_flow)}</PrivacyMask>
                     </p>
                   </div>
                   <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Lordo</span>
-                      <span className="font-semibold text-foreground tabular-nums"><PrivacyMask>{formatEuro(m.gross)}</PrivacyMask></span>
+                      <span className="text-on-surface-variant">Lordo</span>
+                      <span className="font-semibold text-on-surface tabular-nums"><PrivacyMask>{formatEuro(m.gross)}</PrivacyMask></span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Tasse</span>
+                      <span className="text-on-surface-variant">Tasse</span>
                       <span className="font-semibold tabular-nums" style={{ color: COLOR_EXPENSES }}>−<PrivacyMask>{formatEuro(m.taxes)}</PrivacyMask></span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Spese aziend.</span>
+                      <span className="text-on-surface-variant">Spese aziend.</span>
                       <span className="font-semibold tabular-nums" style={{ color: COLOR_BIZ_EXPENSES }}>−<PrivacyMask>{formatEuro(m.business_expenses)}</PrivacyMask></span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Utile aziend.</span>
+                      <span className="text-on-surface-variant">Utile aziend.</span>
                       <span className="font-semibold tabular-nums" style={{ color: COLOR_NET_BUSINESS }}><PrivacyMask>{formatEuro(m.net_business)}</PrivacyMask></span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Spese pers.</span>
+                      <span className="text-on-surface-variant">Spese pers.</span>
                       <span className="font-semibold tabular-nums" style={{ color: COLOR_EXPENSES }}>−<PrivacyMask>{formatEuro(m.personal_expenses)}</PrivacyMask></span>
                     </div>
                     <div className="flex justify-between col-span-2">
-                      <span className="text-muted-foreground">Ricavi pers.</span>
+                      <span className="text-on-surface-variant">Ricavi pers.</span>
                       <span className="font-semibold tabular-nums" style={{ color: COLOR_INCOMES }}>+<PrivacyMask>{formatEuro(m.personal_incomes)}</PrivacyMask></span>
                     </div>
                   </div>
