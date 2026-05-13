@@ -23,11 +23,11 @@ export const BreakEvenGauge = () => {
   const targetSweep = halfCircle * targetPct;
 
   return (
-    <div className="rounded-3xl border border-border bg-card p-5 shadow-card">
+    <div className="bg-surface-container/30 rounded-2xl glass-panel border-white/10 shadow-none p-5">
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Avanzamento Mensile</p>
-          <p className="text-[11px] text-muted-foreground">Target dinamico <PrivacyMask>{formatEuro(monthly_target)}</PrivacyMask></p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-on-surface font-headline-sm">Avanzamento Mensile</p>
+          <p className="text-[11px] text-on-surface-variant font-body-sm">Target dinamico <PrivacyMask>{formatEuro(monthly_target)}</PrivacyMask></p>
         </div>
         <div
           className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
@@ -61,7 +61,7 @@ export const BreakEvenGauge = () => {
         </svg>
 
         <div className="absolute inset-0 flex flex-col items-center justify-end pb-1">
-          <p className="text-3xl font-bold tracking-tight text-foreground">
+          <p className="text-3xl font-bold tracking-tight text-on-surface">
             <PrivacyMask>{formatEuro(current_monthly_revenue)}</PrivacyMask>
           </p>
           <p
@@ -76,7 +76,7 @@ export const BreakEvenGauge = () => {
         </div>
       </div>
 
-      <div className="mt-4 flex items-center justify-between text-[11px] text-muted-foreground">
+      <div className="mt-4 flex items-center justify-between text-[11px] text-on-surface-variant">
         <span className="flex items-center gap-1">
           <Target className="h-3 w-3" />
           Obiettivo <PrivacyMask>{formatEuro(monthly_target)}</PrivacyMask>

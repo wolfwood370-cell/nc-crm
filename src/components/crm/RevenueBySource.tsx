@@ -69,11 +69,11 @@ export const RevenueBySource = () => {
   const drillRow = drill ? rows.find(r => r.source === drill) : null;
 
   return (
-    <div className="rounded-3xl border border-border bg-card p-5 shadow-card">
+    <div className="bg-surface-container/30 rounded-2xl glass-panel border-white/10 shadow-none p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Valore per Fonte</p>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-xs font-semibold uppercase tracking-wider text-on-surface font-headline-sm">Valore per Fonte</p>
+          <p className="text-[11px] text-on-surface-variant font-body-sm">
             {timeframe === 'year'
               ? `Incassi ${currentYear} per canale di acquisizione`
               : 'Incassi totali per canale di acquisizione'}
@@ -89,15 +89,15 @@ export const RevenueBySource = () => {
               <SelectItem value="all">Tutto il tempo</SelectItem>
             </SelectContent>
           </Select>
-          <p className="text-sm font-bold text-foreground tabular-nums">
+          <p className="text-sm font-bold text-on-surface tabular-nums">
             <PrivacyMask>{formatEuro(grandTotal)}</PrivacyMask>
           </p>
         </div>
       </div>
 
       {grandTotal === 0 ? (
-        <div className="mt-4 rounded-xl border border-dashed border-border p-6 text-center">
-          <p className="text-xs text-muted-foreground">
+        <div className="mt-4 rounded-xl border border-dashed border-white/10 p-6 text-center">
+          <p className="text-xs text-on-surface-variant">
             {timeframe === 'year'
               ? `Nessun incasso registrato per il ${currentYear}.`
               : 'Nessun incasso registrato. Registra il primo pagamento per popolare il grafico.'}
@@ -125,22 +125,22 @@ export const RevenueBySource = () => {
                   axisLine={false}
                   tickLine={false}
                   width={110}
-                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+                  tick={{ fill: '#bbcabf', fontSize: 11 }}
                 />
                 <Tooltip
-                  cursor={{ fill: 'hsl(var(--secondary))', opacity: 0.5 }}
+                  cursor={{ fill: 'rgba(255,255,255,0.08)' }}
                   contentStyle={{
                     borderRadius: 12,
-                    border: '1px solid hsl(var(--border))',
-                    background: 'hsl(var(--card))',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    background: '#1a211d',
                     fontSize: 12,
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
                   }}
                   formatter={(value: number) => [
                     privacyMode ? '••••' : formatEuro(value),
                     'Incassi',
                   ]}
-                  labelStyle={{ color: 'hsl(var(--foreground))', fontWeight: 600 }}
+                  labelStyle={{ color: '#dde4dd', fontWeight: 600 }}
                 />
                 <Bar
                   dataKey="value"
@@ -167,13 +167,13 @@ export const RevenueBySource = () => {
                 type="button"
                 disabled={r.value === 0}
                 onClick={() => setDrill(r.source)}
-                className="flex items-center justify-between text-xs rounded-md px-1.5 py-1 transition-smooth enabled:hover:bg-secondary disabled:opacity-50 disabled:cursor-default"
+                className="flex items-center justify-between text-xs rounded-md px-1.5 py-1 transition-smooth enabled:hover:bg-surface-variant/50 disabled:opacity-50 disabled:cursor-default"
               >
                 <span className="flex items-center gap-2 min-w-0">
                   <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: r.color }} />
-                  <span className="text-foreground truncate">{r.label}</span>
+                  <span className="text-on-surface truncate">{r.label}</span>
                 </span>
-                <span className="font-semibold text-muted-foreground tabular-nums">
+                <span className="font-semibold text-on-surface-variant tabular-nums">
                   <PrivacyMask>{formatEuro(r.value)}</PrivacyMask>
                 </span>
               </button>
