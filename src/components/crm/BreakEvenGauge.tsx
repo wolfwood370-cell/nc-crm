@@ -1,77 +1,90 @@
 import { useCrm } from '@/store/useCrm';
 import { formatEuro } from '@/types/crm';
+import { Target, TrendingUp } from 'lucide-react';
 import { PrivacyMask } from './PrivacyMask';
 
 export const BreakEvenGauge = () => {
   const { financials, financialSummary } = useCrm();
   const { monthly_target } = financials;
-  const current = financialSummary.gross_monthly;
+  // Fonte di verità: ricavi lordi del mese dalle transazioni Saldate
+  const current_monthly_revenue = financialSummary.gross_monthly;
 
   const safeTarget = Math.max(monthly_target, 1);
-  const pct = Math.min(1, Math.max(0, current / safeTarget));
-  const pctLabel = Math.round(pct * 100);
+  const reachedTarget = current_monthly_revenue >= safeTarget;
+  const surplus = Math.max(0, current_monthly_revenue - safeTarget);
+  const remainingToTarget = Math.max(0, safeTarget - current_monthly_revenue);
 
-  // Semicircle path: r=80 → circumference of full circle = 2πr ≈ 502.4; semicircle ≈ 251.2
-  const CIRC = 251.2;
-  const dashOffset = CIRC - CIRC * pct;
+  const radius = 80;
+  const stroke = 14;
+  const circumference = 2 * Math.PI * radius;
+  const halfCircle = circumference / 2;
 
-  const targetLabel = monthly_target >= 1000
-    ? `${(monthly_target / 1000).toFixed(monthly_target >= 10000 ? 0 : 1)}k`
-    : `${Math.round(monthly_target)}`;
+  const targetPct = Math.min(1, current_monthly_revenue / safeTarget);
+  const targetSweep = halfCircle * targetPct;
 
   return (
-    <div className="bg-[#1a211d]/40 backdrop-blur-xl border border-white/10 shadow-lg rounded-2xl p-6 flex flex-col items-center relative overflow-hidden h-full">
-      <h3 className="font-semibold text-lg text-[#dde4dd] w-full text-left mb-8">Avanzamento Mensile</h3>
-
-      <div className="relative w-64 h-32 overflow-hidden mb-6">
-        <svg className="w-full h-full" viewBox="0 0 200 100">
-          <defs>
-            <filter id="gaugeGlow" x="-20%" y="-20%" width="140%" height="140%">
-              <feGaussianBlur stdDeviation="4" result="blur" />
-              <feComposite in="SourceGraphic" in2="blur" operator="over" />
-            </filter>
-          </defs>
-          {/* Base arc */}
-          <path
-            d="M 20 90 A 80 80 0 0 1 180 90"
-            fill="none"
-            stroke="#2f3632"
-            strokeLinecap="round"
-            strokeWidth="20"
-          />
-          {/* Active arc */}
-          <path
-            d="M 20 90 A 80 80 0 0 1 180 90"
-            fill="none"
-            stroke="#4edea3"
-            strokeLinecap="round"
-            strokeWidth="20"
-            strokeDasharray={CIRC}
-            strokeDashoffset={dashOffset}
-            style={{ transition: 'stroke-dashoffset 600ms ease' }}
-          />
-          {/* Glow */}
-          <path
-            d="M 20 90 A 80 80 0 0 1 180 90"
-            fill="none"
-            stroke="#4edea3"
-            strokeLinecap="round"
-            strokeWidth="20"
-            strokeDasharray={CIRC}
-            strokeDashoffset={dashOffset}
-            opacity="0.5"
-            filter="url(#gaugeGlow)"
-            style={{ transition: 'stroke-dashoffset 600ms ease' }}
-          />
-        </svg>
-        <div className="absolute bottom-0 left-0 w-full flex justify-center items-end pb-2">
-          <span className="text-4xl font-bold text-[#dde4dd] tabular-nums">{pctLabel}%</span>
+    <div className="rounded-3xl border border-border bg-card p-5 shadow-card">
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Avanzamento Mensile</p>
+          <p className="text-[11px] text-muted-foreground">Target dinamico <PrivacyMask>{formatEuro(monthly_target)}</PrivacyMask></p>
+        </div>
+        <div
+          className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+            reachedTarget ? 'bg-primary/15 text-primary' : 'bg-warning/15 text-warning'
+          }`}
+        >
+          {reachedTarget ? 'Target Raggiunto' : 'In Avanzamento'}
         </div>
       </div>
 
-      <div className="flex justify-between w-full text-sm text-[#bbcabf] px-8">
-        <span><PrivacyMask>{formatEuro(current)}</PrivacyMask></span>
-        <span>Obiettivo: <PrivacyMask>{targetLabel}</PrivacyMask></span>
+      <div className="relative mt-4 mx-auto w-full max-w-[260px]">
+        <svg viewBox="0 0 200 120" className="w-full h-auto">
+          {/* Track semicircolare */}
+          <path
+            d={`M ${100 - radius} 100 A ${radius} ${radius} 0 0 1 ${100 + radius} 100`}
+            fill="none"
+            stroke="hsl(var(--secondary))"
+            strokeWidth={stroke}
+            strokeLinecap="round"
+          />
+          {/* Segmento 0 → target */}
+          <path
+            d={`M ${100 - radius} 100 A ${radius} ${radius} 0 0 1 ${100 + radius} 100`}
+            fill="none"
+            stroke={reachedTarget ? 'hsl(var(--primary))' : 'hsl(var(--warning))'}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeDasharray={`${targetSweep} ${halfCircle}`}
+            className="transition-smooth"
+          />
+        </svg>
+
+        <div className="absolute inset-0 flex flex-col items-center justify-end pb-1">
+          <p className="text-3xl font-bold tracking-tight text-foreground">
+            <PrivacyMask>{formatEuro(current_monthly_revenue)}</PrivacyMask>
+          </p>
+          <p
+            className={`text-xs font-semibold ${
+              reachedTarget ? 'text-primary' : 'text-warning'
+            }`}
+          >
+            {reachedTarget
+              ? <>+<PrivacyMask>{formatEuro(surplus)}</PrivacyMask> oltre il target</>
+              : <><PrivacyMask>{formatEuro(remainingToTarget)}</PrivacyMask> al target</>}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4 flex items-center justify-between text-[11px] text-muted-foreground">
+        <span className="flex items-center gap-1">
+          <Target className="h-3 w-3" />
+          Obiettivo <PrivacyMask>{formatEuro(monthly_target)}</PrivacyMask>
+        </span>
+        <span className="flex items-center gap-1">
+          <TrendingUp className="h-3 w-3" />
+          {Math.round(targetPct * 100)}%
+        </span>
       </div>
     </div>
   );
