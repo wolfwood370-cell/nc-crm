@@ -1,0 +1,99 @@
+  .dark {
+    --on-primary-container: 159 100% 13%;
+    --surface-tint: 155 69% 59%;
+    --inverse-on-surface: 137 8% 18%;
+    --secondary-container: 213 95% 44%;
+    --tertiary-fixed: 4 100% 92%;
+    --surface-container: 146 12% 12%;
+    --secondary: 222 100% 84%;
+    --outline-variant: 146 10% 26%;
+    --on-surface: 120 11% 88%;
+    --tertiary-container: 2 96% 73%;
+    --on-tertiary-fixed: 355 100% 13%;
+    --surface-variant: 146 7% 20%;
+    --secondary-fixed-dim: 222 100% 84%;
+    --tertiary-fixed-dim: 3 100% 84%;
+    --surface-container-low: 146 14% 10%;
+    --surface-container-highest: 146 7% 20%;
+    --primary-fixed: 154 95% 71%;
+    --on-secondary-fixed: 216 100% 13%;
+    --error: 6 100% 84%;
+    --surface-container-lowest: 146 28% 5%;
+    --surface-bright: 137 6% 22%;
+    --secondary-fixed: 225 100% 92%;
+    --on-secondary: 214 100% 21%;
+    --error-container: 356 100% 29%;
+    --surface-dim: 146 20% 7%;
+    --on-secondary-fixed-variant: 213 100% 29%;
+    --outline: 137 6% 55%;
+    --surface-container-high: 143 10% 16%;
+    --on-tertiary-container: 357 70% 26%;
+    --on-primary-fixed-variant: 160 100% 16%;
+    --on-primary-fixed: 155 100% 6%;
+    --on-tertiary: 355 84% 22%;
+    --on-background: 120 11% 88%;
+    --background: 146 20% 7%;
+    --tertiary: 3 100% 84%;
+    --inverse-surface: 120 11% 88%;
+    --on-surface-variant: 136 12% 76%;
+    --on-tertiary-fixed-variant: 358 59% 33%;
+    --on-secondary-container: 226 100% 95%;
+    --on-primary: 159 100% 11%;
+    --inverse-primary: 161 100% 21%;
+    --surface: 146 20% 7%;
+    --primary-container: 160 84% 39%;
+    --on-error: 357 100% 21%;
+    --primary-fixed-dim: 155 69% 59%;
+    --primary: 155 69% 59%;
+    --on-error-container: 6 100% 92%;
+  }
+
+{
+        "on-primary-container": "hsl(var(--on-primary-container))",
+        "surface-tint": "hsl(var(--surface-tint))",
+        "inverse-on-surface": "hsl(var(--inverse-on-surface))",
+        "secondary-container": "hsl(var(--secondary-container))",
+        "tertiary-fixed": "hsl(var(--tertiary-fixed))",
+        "surface-container": "hsl(var(--surface-container))",
+        "secondary": "hsl(var(--secondary))",
+        "outline-variant": "hsl(var(--outline-variant))",
+        "on-surface": "hsl(var(--on-surface))",
+        "tertiary-container": "hsl(var(--tertiary-container))",
+        "on-tertiary-fixed": "hsl(var(--on-tertiary-fixed))",
+        "surface-variant": "hsl(var(--surface-variant))",
+        "secondary-fixed-dim": "hsl(var(--secondary-fixed-dim))",
+        "tertiary-fixed-dim": "hsl(var(--tertiary-fixed-dim))",
+        "surface-container-low": "hsl(var(--surface-container-low))",
+        "surface-container-highest": "hsl(var(--surface-container-highest))",
+        "primary-fixed": "hsl(var(--primary-fixed))",
+        "on-secondary-fixed": "hsl(var(--on-secondary-fixed))",
+        "error": "hsl(var(--error))",
+        "surface-container-lowest": "hsl(var(--surface-container-lowest))",
+        "surface-bright": "hsl(var(--surface-bright))",
+        "secondary-fixed": "hsl(var(--secondary-fixed))",
+        "on-secondary": "hsl(var(--on-secondary))",
+        "error-container": "hsl(var(--error-container))",
+        "surface-dim": "hsl(var(--surface-dim))",
+        "on-secondary-fixed-variant": "hsl(var(--on-secondary-fixed-variant))",
+        "outline": "hsl(var(--outline))",
+        "surface-container-high": "hsl(var(--surface-container-high))",
+        "on-tertiary-container": "hsl(var(--on-tertiary-container))",
+        "on-primary-fixed-variant": "hsl(var(--on-primary-fixed-variant))",
+        "on-primary-fixed": "hsl(var(--on-primary-fixed))",
+        "on-tertiary": "hsl(var(--on-tertiary))",
+        "on-background": "hsl(var(--on-background))",
+        "background": "hsl(var(--background))",
+        "tertiary": "hsl(var(--tertiary))",
+        "inverse-surface": "hsl(var(--inverse-surface))",
+        "on-surface-variant": "hsl(var(--on-surface-variant))",
+        "on-tertiary-fixed-variant": "hsl(var(--on-tertiary-fixed-variant))",
+        "on-secondary-container": "hsl(var(--on-secondary-container))",
+        "on-primary": "hsl(var(--on-primary))",
+        "inverse-primary": "hsl(var(--inverse-primary))",
+        "surface": "hsl(var(--surface))",
+        "primary-container": "hsl(var(--primary-container))",
+        "on-error": "hsl(var(--on-error))",
+        "primary-fixed-dim": "hsl(var(--primary-fixed-dim))",
+        "primary": "hsl(var(--primary))",
+        "on-error-container": "hsl(var(--on-error-container))",
+}

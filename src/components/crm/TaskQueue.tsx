@@ -16,30 +16,26 @@ interface Task {
 
 const priorityOrder: Record<Priority, number> = { critical: 0, high: 1, medium: 2, low: 3 };
 
-const priorityStyles: Record<Priority, { wrap: string; chip: string; icon: string; label: string }> = {
+const priorityStyles: Record<Priority, { wrap: string; border: string; iconHover: string }> = {
   critical: {
-    wrap: 'border-destructive/40 bg-destructive/5 hover:border-destructive',
-    chip: 'bg-destructive text-destructive-foreground',
-    icon: 'bg-destructive/15 text-destructive',
-    label: 'Critica',
+    wrap: 'bg-black/20 glow-border',
+    border: 'border-error',
+    iconHover: 'hover:text-error',
   },
   high: {
-    wrap: 'border-warning/40 bg-warning/5 hover:border-warning',
-    chip: 'bg-warning text-warning-foreground',
-    icon: 'bg-warning/15 text-warning',
-    label: 'Alta',
+    wrap: 'bg-black/20 glow-border',
+    border: 'border-warning',
+    iconHover: 'hover:text-warning',
   },
   medium: {
-    wrap: 'border-border bg-card hover:border-primary/40',
-    chip: 'bg-primary/10 text-primary',
-    icon: 'bg-primary/10 text-primary',
-    label: 'Media',
+    wrap: 'bg-black/20 glow-border',
+    border: 'border-primary',
+    iconHover: 'hover:text-primary',
   },
   low: {
-    wrap: 'border-border bg-card hover:border-foreground/20',
-    chip: 'bg-muted text-muted-foreground',
-    icon: 'bg-muted text-muted-foreground',
-    label: 'Bassa',
+    wrap: 'bg-black/20 glow-border',
+    border: 'border-outline-variant',
+    iconHover: 'hover:text-primary',
   },
 };
 
@@ -188,28 +184,27 @@ export const TaskQueue = () => {
       {sorted.map((t, index) => {
         const s = priorityStyles[t.priority];
         return (
-          <button
+          <div
             key={t.id}
-            onClick={() => navigate(`/clients/${t.clientId}`)}
             style={{ animationDelay: `${index * 100}ms`, animationFillMode: 'both' }}
-            className={`group w-full text-left rounded-2xl border p-4 transition-smooth active:scale-[0.99] shadow-card hover:bg-muted/50 animate-in fade-in slide-in-from-bottom-4 duration-500 ${s.wrap}`}
+            className={`p-4 rounded-2xl border-l-2 flex items-center justify-between group hover:bg-white/5 transition-all animate-in fade-in slide-in-from-bottom-4 duration-500 ${s.wrap} ${s.border}`}
           >
-            <div className="flex items-center gap-3">
-              <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${s.icon}`}>
-                {t.icon}
+            <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate(`/clients/${t.clientId}`)}>
+              <div className="w-5 h-5 rounded border border-on-surface-variant flex items-center justify-center hover:border-primary shrink-0" />
+              <div>
+                <p className="font-data-tabular text-data-tabular text-on-surface">{t.title}</p>
+                <p className={`font-body-sm text-body-sm text-[12px] ${t.priority === 'critical' ? 'text-error' : 'text-on-surface-variant'}`}>{t.subtitle}</p>
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="font-semibold text-sm truncate">{t.title}</p>
-                </div>
-                <p className="text-xs text-muted-foreground truncate mt-0.5">{t.subtitle}</p>
-              </div>
-              <CheckCircle2 className="h-5 w-5 shrink-0 text-muted-foreground/30 transition-colors duration-200 group-hover:text-emerald-500" />
-              <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${s.chip}`}>
-                {s.label}
-              </span>
             </div>
-          </button>
+            <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-2 shrink-0">
+              <button 
+                onClick={(e) => { e.stopPropagation(); navigate(`/clients/${t.clientId}`); }}
+                className={`w-8 h-8 rounded-full bg-surface-variant flex items-center justify-center hover:bg-primary/20 transition-colors ${s.iconHover} text-on-surface-variant`}
+              >
+                {t.icon}
+              </button>
+            </div>
+          </div>
         );
       })}
     </div>
