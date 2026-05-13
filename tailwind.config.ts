@@ -10,22 +10,6 @@ export default {
     extend: {
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
-        "body-sm": ["Inter"],
-        "body-lg": ["Inter"],
-        "label-pill": ["Inter"],
-        "headline-md": ["Manrope"],
-        "headline-sm": ["Manrope"],
-        "display-lg": ["Manrope"],
-        "data-tabular": ["Inter"]
-      },
-      fontSize: {
-        "body-sm": ["14px", { "lineHeight": "1.5", "fontWeight": "400" }],
-        "body-lg": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
-        "label-pill": ["12px", { "lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600" }],
-        "headline-md": ["24px", { "lineHeight": "1.3", "fontWeight": "600" }],
-        "headline-sm": ["18px", { "lineHeight": "1.4", "fontWeight": "600" }],
-        "display-lg": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700" }],
-        "data-tabular": ["14px", { "lineHeight": "1.2", "fontWeight": "500" }]
       },
       colors: {
         border: "hsl(var(--border))",
@@ -37,7 +21,6 @@ export default {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
           glow: "hsl(var(--primary-glow))",
-          container: "hsl(var(--primary-container))",
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
@@ -81,18 +64,6 @@ export default {
           pitch: "hsl(var(--stage-pitch))",
           won: "hsl(var(--stage-won))",
           lost: "hsl(var(--stage-lost))",
-        },
-        surface: {
-          DEFAULT: "hsl(var(--surface))",
-          container: "hsl(var(--surface-container))",
-          "container-high": "hsl(var(--surface-container-high))",
-        },
-        "on-surface": {
-          DEFAULT: "hsl(var(--on-surface))",
-          variant: "hsl(var(--on-surface-variant))",
-        },
-        error: {
-          DEFAULT: "hsl(var(--error))",
         },
       },
       borderRadius: {

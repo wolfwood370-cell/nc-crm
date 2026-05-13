@@ -64,16 +64,6 @@
 
     --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   }
-
-  :root, .dark {
-    --surface-container: 26 11% 14%; /* #1a211d */
-    --surface-container-high: 145 10% 16%; /* #242c27 */
-    --on-surface: 120 11% 88%; /* #dde4dd */
-    --on-surface-variant: 137 13% 76%; /* #bbcabf */
-    --primary: 155 70% 59%; /* #4edea3 */
-    --primary-container: 160 84% 39%; /* #10b981 */
-    --error: 3 100% 83%; /* #ffb4ab */
-  }
 }
 
 @layer base {
@@ -100,8 +90,6 @@
   .transition-smooth { transition: var(--transition-smooth); }
   .scrollbar-hide::-webkit-scrollbar { display: none; }
   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-
-
 
   /* Premium Kanban horizontal scrollbar — sleek, appears on hover */
   .kanban-scroll { scrollbar-width: thin; scrollbar-color: transparent transparent; transition: scrollbar-color 0.3s ease; }

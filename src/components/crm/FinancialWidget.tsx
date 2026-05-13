@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useCrm } from '@/store/useCrm';
 import { Transaction, formatEuro, HISTORY_START_YEAR, HISTORY_START_MONTH } from '@/types/crm';
-import { ArrowDown, ArrowUp, CalendarRange, TrendingUp, Wallet, MoreHorizontal } from 'lucide-react';
+import { ArrowDown, ArrowUp, CalendarRange, TrendingUp, Wallet } from 'lucide-react';
 import { PrivacyMask } from './PrivacyMask';
 import { TransactionsSheet } from './TransactionsSheet';
 
@@ -116,57 +116,57 @@ export const FinancialWidget = () => {
     : '';
 
   return (
-    <div className="col-span-12 lg:col-span-8 bg-surface-container/30 rounded-[2.5rem] glass-panel p-[32px] flex flex-col justify-between relative overflow-hidden h-full min-h-[320px]">
-      {/* Abstract glowing orb behind */}
-      <div className="absolute top-0 right-0 w-96 h-96 bg-primary/10 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/3"></div>
-      
-      <div className="relative z-10 flex justify-between items-start mb-8">
-        <div>
-          <h3 className="font-headline-md text-headline-md text-on-surface mb-1">Panoramica Finanziaria</h3>
-          <p className="font-body-sm text-body-sm text-on-surface-variant">Cashflow mensile e saldo netto</p>
+    <div className="space-y-4">
+      {/* Hero ricavi mese */}
+      <div className="relative overflow-hidden rounded-3xl gradient-card border border-border p-5 shadow-card">
+        <div className="absolute inset-0 gradient-emerald-glow pointer-events-none" />
+        <div className="relative">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Fatturato Lordo del Mese</p>
+          <p className="mt-1 text-4xl font-bold tracking-tight text-foreground">
+            <PrivacyMask>{formatEuro(gross_monthly)}</PrivacyMask>
+          </p>
+          <p className={`mt-1 text-sm font-medium ${aboveBreakEven ? 'text-primary' : 'text-destructive'}`}>
+            {aboveBreakEven
+              ? <>+<PrivacyMask>{formatEuro(net_monthly)}</PrivacyMask> netti dopo le tasse</>
+              : <>Mancano <PrivacyMask>{formatEuro(Math.abs(net_monthly))}</PrivacyMask> per coprire le tasse</>}
+          </p>
         </div>
-        <button 
-          onClick={() => setDrill('monthly')}
-          className="w-10 h-10 rounded-full glass-panel flex items-center justify-center hover:bg-white/5 transition-colors"
-        >
-          <MoreHorizontal className="w-5 h-5 text-on-surface" />
-        </button>
       </div>
 
-      <div className="relative z-10 flex items-end gap-8 mt-auto">
-        <div>
-          <p className="font-body-sm text-body-sm text-on-surface-variant mb-2">Saldo Netto</p>
-          <p className="font-display-lg text-display-lg text-on-surface font-data-tabular">
-            <PrivacyMask>{formatEuro(net_monthly)}</PrivacyMask>
-          </p>
-          <div className="flex items-center gap-2 mt-2">
-            {aboveBreakEven ? (
-              <span className="px-2 py-0.5 rounded bg-primary/10 text-primary font-label-pill text-label-pill flex items-center gap-1">
-                <TrendingUp className="w-3.5 h-3.5" /> in profitto
-              </span>
-            ) : (
-              <span className="px-2 py-0.5 rounded bg-error/10 text-error font-label-pill text-label-pill flex items-center gap-1">
-                <ArrowDown className="w-3.5 h-3.5" /> in perdita
-              </span>
-            )}
-            <span className="font-body-sm text-body-sm text-on-surface-variant">vs tasse</span>
-          </div>
-        </div>
-        
-        <div className="flex-1 flex justify-end gap-6 pb-2">
-          <div className="text-right">
-            <p className="font-body-sm text-body-sm text-on-surface-variant mb-1">Entrate (Lordo)</p>
-            <p className="font-headline-sm text-headline-sm text-primary font-data-tabular">
-              + <PrivacyMask>{formatEuro(gross_monthly)}</PrivacyMask>
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="font-body-sm text-body-sm text-on-surface-variant mb-1">Uscite (Tasse)</p>
-            <p className="font-headline-sm text-headline-sm text-tertiary-container font-data-tabular">
-              - <PrivacyMask>{formatEuro(Math.abs(gross_monthly - net_monthly))}</PrivacyMask>
-            </p>
-          </div>
-        </div>
+      {/* Griglia 2x2 cliccabile */}
+      <div className="grid grid-cols-2 gap-3">
+        <MetricCard
+          label="Lordo Mese"
+          sublabel="Incassi mese corrente"
+          value={gross_monthly}
+          variant="gross"
+          icon={<Wallet className="h-4 w-4" />}
+          onClick={() => setDrill('monthly')}
+        />
+        <MetricCard
+          label="Netto Mese"
+          sublabel="Dopo 24,9% di tasse"
+          value={net_monthly}
+          variant="net"
+          icon={<TrendingUp className="h-4 w-4" />}
+          onClick={() => setDrill('monthly')}
+        />
+        <MetricCard
+          label="Lordo dal 1° Gen"
+          sublabel="Anno in corso (YTD)"
+          value={gross_ytd}
+          variant="gross"
+          icon={<CalendarRange className="h-4 w-4" />}
+          onClick={() => setDrill('ytd')}
+        />
+        <MetricCard
+          label="Netto dal 1° Gen"
+          sublabel="Dopo 24,9% di tasse"
+          value={net_ytd}
+          variant="net"
+          icon={<TrendingUp className="h-4 w-4" />}
+          onClick={() => setDrill('ytd')}
+        />
       </div>
 
       <TransactionsSheet
