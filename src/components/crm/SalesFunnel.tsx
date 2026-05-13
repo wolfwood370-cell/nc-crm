@@ -1,107 +1,101 @@
 import { useMemo } from 'react';
 import { useCrm } from '@/store/useCrm';
-import { Filter } from 'lucide-react';
+
+interface FunnelStage {
+  label: string;
+  value: number;
+  widthPct: number;
+  opacity: number;
+  align: 'left' | 'right';
+}
 
 export const SalesFunnel = () => {
   const { clients } = useCrm();
 
-  const stats = useMemo(() => {
+  const { stages, drops } = useMemo(() => {
     const total = clients.length;
-    // "Pitched" = cliente che ha visto la proposta (in Pitch o oltre)
     const pitchedStages = new Set(['Pitch Presented', 'Closed Won', 'Closed Lost']);
     const pitched = clients.filter(c => pitchedStages.has(c.pipeline_stage)).length;
     const won = clients.filter(c => c.pipeline_stage === 'Closed Won').length;
-    const winRate = total > 0 ? (won / total) * 100 : 0;
-    const closeRate = pitched > 0 ? (won / pitched) * 100 : 0;
-    return { total, pitched, won, winRate, closeRate };
+
+    const safeTotal = Math.max(total, 1);
+
+    const stages: FunnelStage[] = [
+      {
+        label: 'Lead Totali',
+        value: total,
+        widthPct: 100,
+        opacity: 1,
+        align: 'left',
+      },
+      {
+        label: 'Proposta',
+        value: pitched,
+        widthPct: Math.max(8, (pitched / safeTotal) * 100),
+        opacity: 0.8,
+        align: 'right',
+      },
+      {
+        label: 'Clienti',
+        value: won,
+        widthPct: Math.max(6, (won / safeTotal) * 100),
+        opacity: 0.5,
+        align: 'right',
+      },
+    ];
+
+    const dropPitched = total > 0 ? Math.round(((total - pitched) / total) * 100) : 0;
+    const dropWon = pitched > 0 ? Math.round(((pitched - won) / pitched) * 100) : 0;
+    const drops = [dropPitched, dropWon];
+
+    return { stages, drops };
   }, [clients]);
 
-  const pct = (n: number, base: number) => (base > 0 ? Math.max(4, (n / base) * 100) : 0);
-  const pitchedWidth = pct(stats.pitched, stats.total);
-  const wonWidth = pct(stats.won, stats.total);
+  const empty = clients.length === 0;
 
   return (
-    <div className="bg-surface-container/30 rounded-2xl glass-panel border-white/10 shadow-none p-5">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary">
-            <Filter className="h-4 w-4" />
-          </div>
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-on-surface font-headline-sm">Analisi di Conversione</p>
-            <p className="text-[11px] text-on-surface-variant font-body-sm">Tasso di conversione globale</p>
-          </div>
-        </div>
-        <div className="text-right">
-          <p className="text-3xl font-bold text-primary leading-none">{stats.winRate.toFixed(1)}%</p>
-          <p className="text-[10px] text-on-surface-variant mt-1">Win Rate</p>
-        </div>
-      </div>
+    <div className="bg-[#1a211d]/40 backdrop-blur-xl border border-white/10 shadow-lg rounded-2xl p-6 flex flex-col relative overflow-hidden h-full">
+      <h3 className="font-semibold text-lg text-[#dde4dd] mb-6">Analisi di Conversione</h3>
 
-      {stats.total === 0 ? (
-        <div className="mt-4 rounded-xl border border-dashed border-white/10 p-6 text-center">
-          <p className="text-xs text-on-surface-variant">Aggiungi i tuoi primi lead per vedere il funnel.</p>
+      {empty ? (
+        <div className="flex-1 flex items-center justify-center rounded-xl border border-dashed border-white/10 p-6 text-center">
+          <p className="text-sm text-[#bbcabf]">Aggiungi i tuoi primi lead per vedere il funnel.</p>
         </div>
       ) : (
-        <>
-          <div className="mt-5 space-y-3">
-            {/* Total Leads */}
-            <div>
-              <div className="flex items-baseline justify-between text-xs mb-1">
-                <span className="font-semibold text-on-surface">Lead Totali</span>
-                <span className="font-bold text-on-surface tabular-nums">{stats.total}</span>
+        <div className="flex flex-col gap-4 flex-1 justify-center">
+          {stages.map((stage, idx) => {
+            const barClass = stage.align === 'left'
+              ? 'absolute left-0 h-full rounded-r-lg'
+              : 'absolute right-0 h-full rounded-l-lg';
+            const innerWrapper = stage.align === 'left'
+              ? 'relative z-10 flex justify-between w-full px-4 items-center'
+              : 'relative z-10 flex justify-between ml-auto px-4 items-center';
+            return (
+              <div key={stage.label}>
+                <div className="relative w-full h-12 flex items-center">
+                  <div
+                    className={barClass}
+                    style={{ width: `${stage.widthPct}%`, backgroundColor: '#4edea3', opacity: stage.opacity }}
+                  />
+                  <div
+                    className={innerWrapper}
+                    style={stage.align === 'right' ? { width: `${stage.widthPct}%` } : undefined}
+                  >
+                    <span className="text-sm text-[#003824] font-medium truncate">{stage.label}</span>
+                    <span className="text-sm text-[#003824] font-bold tabular-nums">{stage.value.toLocaleString('it-IT')}</span>
+                  </div>
+                </div>
+                {idx < stages.length - 1 && (
+                  <div className="flex justify-end pr-4 -my-2 z-10">
+                    <span className="text-xs font-semibold tracking-wider text-[#ffb4ab] bg-[#ffb4ab]/10 px-2 py-1 rounded">
+                      -{drops[idx]}%
+                    </span>
+                  </div>
+                )}
               </div>
-              <div className="h-8 w-full rounded-lg bg-surface-variant/40 flex items-center px-3">
-                <div className="h-full w-full rounded-lg gradient-primary opacity-90" />
-              </div>
-            </div>
-
-            {/* Pitched */}
-            <div>
-              <div className="flex items-baseline justify-between text-xs mb-1">
-                <span className="font-semibold text-on-surface">Proposta Presentata</span>
-                <span className="font-bold text-on-surface tabular-nums">
-                  {stats.pitched} <span className="text-on-surface-variant font-normal">({stats.total > 0 ? ((stats.pitched / stats.total) * 100).toFixed(0) : 0}%)</span>
-                </span>
-              </div>
-              <div className="h-8 w-full rounded-lg bg-surface-variant/40 overflow-hidden">
-                <div
-                  className="h-full rounded-lg transition-smooth"
-                  style={{ width: `${pitchedWidth}%`, background: 'hsl(43 96% 56%)' }}
-                />
-              </div>
-            </div>
-
-            {/* Won */}
-            <div>
-              <div className="flex items-baseline justify-between text-xs mb-1">
-                <span className="font-semibold text-on-surface">Cliente Acquisito</span>
-                <span className="font-bold text-primary tabular-nums">
-                  {stats.won} <span className="text-on-surface-variant font-normal">({stats.total > 0 ? ((stats.won / stats.total) * 100).toFixed(0) : 0}%)</span>
-                </span>
-              </div>
-              <div className="h-8 w-full rounded-lg bg-surface-variant/40 overflow-hidden">
-                <div
-                  className="h-full rounded-lg transition-smooth"
-                  style={{ width: `${wonWidth}%`, background: 'hsl(160 84% 39%)' }}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-5 grid grid-cols-2 gap-3 pt-4 border-t border-white/10">
-            <div>
-              <p className="text-[10px] text-on-surface-variant uppercase tracking-wider">Close Rate</p>
-              <p className="mt-1 text-xl font-bold text-on-surface">{stats.closeRate.toFixed(1)}%</p>
-              <p className="text-[10px] text-on-surface-variant mt-0.5">su lead in pitch</p>
-            </div>
-            <div>
-              <p className="text-[10px] text-on-surface-variant uppercase tracking-wider">Win Rate</p>
-              <p className="mt-1 text-xl font-bold text-primary">{stats.winRate.toFixed(1)}%</p>
-              <p className="text-[10px] text-on-surface-variant mt-0.5">su tutti i lead</p>
-            </div>
-          </div>
-        </>
+            );
+          })}
+        </div>
       )}
     </div>
   );
