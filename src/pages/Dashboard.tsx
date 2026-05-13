@@ -7,7 +7,7 @@ import { TaskQueue } from '@/components/crm/TaskQueue';
 import { useCrm } from '@/store/useCrm';
 import { FinancialCardSkeleton, TaskQueueSkeleton } from '@/components/crm/skeletons';
 import { Skeleton } from '@/components/ui/skeleton';
-import { BarChart3, Filter, HeartPulse, Target, TrendingUp, AlertTriangle } from 'lucide-react';
+import { BarChart3, Filter, HeartPulse, Target, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatEuro } from '@/types/crm';
 import { PrivacyMask } from '@/components/crm/PrivacyMask';
