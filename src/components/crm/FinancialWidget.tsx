@@ -1,84 +1,34 @@
 import { useMemo, useState } from 'react';
 import { useCrm } from '@/store/useCrm';
 import { Transaction, formatEuro, HISTORY_START_YEAR, HISTORY_START_MONTH } from '@/types/crm';
-import { ArrowDown, ArrowUp, CalendarRange, TrendingUp, Wallet } from 'lucide-react';
+import { TrendingUp, TrendingDown, MoreHorizontal } from 'lucide-react';
 import { PrivacyMask } from './PrivacyMask';
 import { TransactionsSheet } from './TransactionsSheet';
-
-interface MetricCardProps {
-  label: string;
-  sublabel: string;
-  value: number;
-  variant: 'gross' | 'net';
-  icon: React.ReactNode;
-  onClick?: () => void;
-}
-
-const MetricCard = ({ label, sublabel, value, variant, icon, onClick }: MetricCardProps) => {
-  const isNet = variant === 'net';
-  const isPositive = value >= 0;
-
-  let valueColor = 'text-foreground';
-  let badgeBg = 'bg-secondary';
-  let badgeText = 'text-muted-foreground';
-  if (isNet) {
-    if (isPositive) {
-      valueColor = 'text-primary';
-      badgeBg = 'bg-primary/12';
-      badgeText = 'text-primary';
-    } else {
-      valueColor = 'text-destructive';
-      badgeBg = 'bg-destructive/12';
-      badgeText = 'text-destructive';
-    }
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`text-left w-full rounded-2xl border p-4 shadow-card hover:border-primary/40 transition-smooth active:scale-[0.99] ${
-        isNet
-          ? isPositive
-            ? 'border-primary/30 bg-primary/5'
-            : 'border-destructive/30 bg-destructive/5'
-          : 'border-border bg-card'
-      }`}
-    >
-      <div className="flex items-start justify-between">
-        <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${badgeBg} ${badgeText}`}>
-          {icon}
-        </div>
-        {isNet && (
-          <div className={`flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${badgeBg} ${badgeText}`}>
-            {isPositive ? <ArrowUp className="h-2.5 w-2.5" /> : <ArrowDown className="h-2.5 w-2.5" />}
-            {isPositive ? 'Profitto' : 'Sotto'}
-          </div>
-        )}
-      </div>
-      <div className="mt-3">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
-        <p className={`mt-1 text-2xl font-bold tracking-tight ${valueColor}`}>
-          <PrivacyMask>{formatEuro(value)}</PrivacyMask>
-        </p>
-        <p className="text-[10px] text-muted-foreground mt-0.5">{sublabel}</p>
-      </div>
-    </button>
-  );
-};
 
 type DrillKey = 'monthly' | 'ytd' | null;
 
 export const FinancialWidget = () => {
-  const { financialSummary, transactions } = useCrm();
-  const {
-    gross_monthly,
-    net_monthly,
-    gross_ytd,
-    net_ytd,
-  } = financialSummary;
+  const { financialSummary, monthlyBreakdown, transactions } = useCrm();
+  const { gross_monthly, net_monthly, gross_ytd, net_ytd } = financialSummary;
+  const uscite_monthly = Math.max(0, gross_monthly - net_monthly);
 
-  const aboveBreakEven = net_monthly >= 0;
+  // Trend: net_monthly vs previous month net
+  const trend = useMemo(() => {
+    if (!monthlyBreakdown?.length) return null;
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = now.getMonth();
+    const prev = monthlyBreakdown.find(b => {
+      const pm = m === 0 ? 11 : m - 1;
+      const py = m === 0 ? y - 1 : y;
+      return b.year === py && b.month === pm;
+    });
+    if (!prev || !prev.net_business) return null;
+    const pct = ((net_monthly - prev.net_business) / Math.abs(prev.net_business)) * 100;
+    if (!isFinite(pct)) return null;
+    return pct;
+  }, [monthlyBreakdown, net_monthly]);
+
   const [drill, setDrill] = useState<DrillKey>(null);
 
   const monthlyTx = useMemo<Transaction[]>(() => {
@@ -98,7 +48,7 @@ export const FinancialWidget = () => {
     const ytdStart = new Date(
       Math.max(y, HISTORY_START_YEAR),
       y > HISTORY_START_YEAR ? 0 : HISTORY_START_MONTH,
-      1
+      1,
     );
     return transactions.filter(t => {
       if (t.status !== 'Saldato') return false;
@@ -115,58 +65,77 @@ export const FinancialWidget = () => {
     ? `Lordo ${formatEuro(drillGross)} · Netto ${formatEuro(drillNet)} (dopo 24,9% di tasse)`
     : '';
 
-  return (
-    <div className="space-y-4">
-      {/* Hero ricavi mese */}
-      <div className="relative overflow-hidden rounded-3xl gradient-card border border-border p-5 shadow-card">
-        <div className="absolute inset-0 gradient-emerald-glow pointer-events-none" />
-        <div className="relative">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Fatturato Lordo del Mese</p>
-          <p className="mt-1 text-4xl font-bold tracking-tight text-foreground">
-            <PrivacyMask>{formatEuro(gross_monthly)}</PrivacyMask>
-          </p>
-          <p className={`mt-1 text-sm font-medium ${aboveBreakEven ? 'text-primary' : 'text-destructive'}`}>
-            {aboveBreakEven
-              ? <>+<PrivacyMask>{formatEuro(net_monthly)}</PrivacyMask> netti dopo le tasse</>
-              : <>Mancano <PrivacyMask>{formatEuro(Math.abs(net_monthly))}</PrivacyMask> per coprire le tasse</>}
-          </p>
-        </div>
-      </div>
+  const trendPositive = (trend ?? 0) >= 0;
 
-      {/* Griglia 2x2 cliccabile */}
-      <div className="grid grid-cols-2 gap-3">
-        <MetricCard
-          label="Lordo Mese"
-          sublabel="Incassi mese corrente"
-          value={gross_monthly}
-          variant="gross"
-          icon={<Wallet className="h-4 w-4" />}
-          onClick={() => setDrill('monthly')}
-        />
-        <MetricCard
-          label="Netto Mese"
-          sublabel="Dopo 24,9% di tasse"
-          value={net_monthly}
-          variant="net"
-          icon={<TrendingUp className="h-4 w-4" />}
-          onClick={() => setDrill('monthly')}
-        />
-        <MetricCard
-          label="Lordo dal 1° Gen"
-          sublabel="Anno in corso (YTD)"
-          value={gross_ytd}
-          variant="gross"
-          icon={<CalendarRange className="h-4 w-4" />}
-          onClick={() => setDrill('ytd')}
-        />
-        <MetricCard
-          label="Netto dal 1° Gen"
-          sublabel="Dopo 24,9% di tasse"
-          value={net_ytd}
-          variant="net"
-          icon={<TrendingUp className="h-4 w-4" />}
-          onClick={() => setDrill('ytd')}
-        />
+  return (
+    <>
+      <div className="relative overflow-hidden rounded-[2.5rem] glass-panel bg-surface-container/30 p-8 flex flex-col justify-between min-h-[260px]">
+        {/* glowing orb */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-primary/10 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+
+        <div className="relative z-10 flex justify-between items-start mb-8">
+          <div>
+            <h3 className="text-2xl font-semibold text-on-surface mb-1">Panoramica Finanziaria</h3>
+            <p className="text-sm text-on-surface-variant">Cashflow mensile e saldo netto</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setDrill('monthly')}
+            className="w-10 h-10 rounded-full glass-panel flex items-center justify-center hover:bg-white/5 transition-colors"
+            aria-label="Dettagli"
+          >
+            <MoreHorizontal className="h-4 w-4 text-on-surface" />
+          </button>
+        </div>
+
+        <div className="relative z-10 flex flex-col md:flex-row md:items-end gap-6 md:gap-8 mt-auto">
+          <button
+            type="button"
+            onClick={() => setDrill('monthly')}
+            className="text-left"
+          >
+            <p className="text-sm text-on-surface-variant mb-2">Saldo Netto</p>
+            <p className="text-5xl font-bold tracking-tight text-on-surface tabular-nums">
+              <PrivacyMask>{formatEuro(net_monthly)}</PrivacyMask>
+            </p>
+            {trend !== null && (
+              <div className="flex items-center gap-2 mt-2">
+                <span
+                  className={`px-2 py-0.5 rounded text-xs font-semibold flex items-center gap-1 ${
+                    trendPositive ? 'bg-primary/10 text-primary' : 'bg-error/10 text-error'
+                  }`}
+                >
+                  {trendPositive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                  {trendPositive ? '+' : ''}{trend.toFixed(1)}%
+                </span>
+                <span className="text-sm text-on-surface-variant">vs mese scorso</span>
+              </div>
+            )}
+          </button>
+
+          <div className="flex-1 flex justify-end gap-6 pb-2">
+            <button
+              type="button"
+              onClick={() => setDrill('monthly')}
+              className="text-right group"
+            >
+              <p className="text-sm text-on-surface-variant mb-1">Entrate</p>
+              <p className="text-lg font-semibold text-primary tabular-nums group-hover:opacity-80 transition-opacity">
+                <PrivacyMask>+ {formatEuro(gross_monthly)}</PrivacyMask>
+              </p>
+            </button>
+            <button
+              type="button"
+              onClick={() => setDrill('ytd')}
+              className="text-right group"
+            >
+              <p className="text-sm text-on-surface-variant mb-1">Uscite (Tasse)</p>
+              <p className="text-lg font-semibold text-error tabular-nums group-hover:opacity-80 transition-opacity">
+                <PrivacyMask>- {formatEuro(uscite_monthly)}</PrivacyMask>
+              </p>
+            </button>
+          </div>
+        </div>
       </div>
 
       <TransactionsSheet
@@ -176,6 +145,6 @@ export const FinancialWidget = () => {
         description={drillDesc}
         transactions={drillTx}
       />
-    </div>
+    </>
   );
 };
