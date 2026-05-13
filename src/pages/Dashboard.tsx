@@ -29,7 +29,7 @@ const Dashboard = () => {
   });
 
   return (
-    <div className="px-4 md:px-8 pt-6 pb-10 space-y-6 animate-fade-in bg-background text-on-background min-h-screen">
+    <div className="dark px-4 md:px-8 pt-6 pb-10 space-y-6 animate-fade-in bg-background text-on-background min-h-screen">
       <header className="mb-10">
         <h2 className="font-label-pill text-label-pill text-on-surface-variant uppercase tracking-widest mb-2">{today}</h2>
         <h1 className="font-display-lg text-display-lg text-on-surface mb-6">Centro di Comando</h1>

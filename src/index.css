@@ -65,54 +65,14 @@
     --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  .dark {
-    --on-primary-container: 159 100% 13%;
-    --surface-tint: 155 69% 59%;
-    --inverse-on-surface: 137 8% 18%;
-    --secondary-container: 213 95% 44%;
-    --tertiary-fixed: 4 100% 92%;
-    --surface-container: 146 12% 12%;
-    --secondary: 222 100% 84%;
-    --outline-variant: 146 10% 26%;
-    --on-surface: 120 11% 88%;
-    --tertiary-container: 2 96% 73%;
-    --on-tertiary-fixed: 355 100% 13%;
-    --surface-variant: 146 7% 20%;
-    --secondary-fixed-dim: 222 100% 84%;
-    --tertiary-fixed-dim: 3 100% 84%;
-    --surface-container-low: 146 14% 10%;
-    --surface-container-highest: 146 7% 20%;
-    --primary-fixed: 154 95% 71%;
-    --on-secondary-fixed: 216 100% 13%;
-    --error: 6 100% 84%;
-    --surface-container-lowest: 146 28% 5%;
-    --surface-bright: 137 6% 22%;
-    --secondary-fixed: 225 100% 92%;
-    --on-secondary: 214 100% 21%;
-    --error-container: 356 100% 29%;
-    --surface-dim: 146 20% 7%;
-    --on-secondary-fixed-variant: 213 100% 29%;
-    --outline: 137 6% 55%;
-    --surface-container-high: 143 10% 16%;
-    --on-tertiary-container: 357 70% 26%;
-    --on-primary-fixed-variant: 160 100% 16%;
-    --on-primary-fixed: 155 100% 6%;
-    --on-tertiary: 355 84% 22%;
-    --on-background: 120 11% 88%;
-    --background: 146 20% 7%;
-    --tertiary: 3 100% 84%;
-    --inverse-surface: 120 11% 88%;
-    --on-surface-variant: 136 12% 76%;
-    --on-tertiary-fixed-variant: 358 59% 33%;
-    --on-secondary-container: 226 100% 95%;
-    --on-primary: 159 100% 11%;
-    --inverse-primary: 161 100% 21%;
-    --surface: 146 20% 7%;
-    --primary-container: 160 84% 39%;
-    --on-error: 357 100% 21%;
-    --primary-fixed-dim: 155 69% 59%;
-    --primary: 155 69% 59%;
-    --on-error-container: 6 100% 92%;
+  :root, .dark {
+    --surface-container: 26 11% 14%; /* #1a211d */
+    --surface-container-high: 145 10% 16%; /* #242c27 */
+    --on-surface: 120 11% 88%; /* #dde4dd */
+    --on-surface-variant: 137 13% 76%; /* #bbcabf */
+    --primary: 155 70% 59%; /* #4edea3 */
+    --primary-container: 160 84% 39%; /* #10b981 */
+    --error: 3 100% 83%; /* #ffb4ab */
   }
 }
 
@@ -141,19 +101,7 @@
   .scrollbar-hide::-webkit-scrollbar { display: none; }
   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
-  /* Command Center Design Utilities */
-  .glass-panel {
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-  }
-  .bento-grid {
-    display: grid;
-    gap: 24px;
-    grid-template-columns: repeat(12, 1fr);
-  }
-  .glow-border {
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
-  }
+
 
   /* Premium Kanban horizontal scrollbar — sleek, appears on hover */
   .kanban-scroll { scrollbar-width: thin; scrollbar-color: transparent transparent; transition: scrollbar-color 0.3s ease; }
