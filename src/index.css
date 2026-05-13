@@ -85,10 +85,13 @@
 @layer components {
   .glass-panel {
     @apply backdrop-blur-xl border border-white/10 shadow-lg;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%);
+    background-color: rgba(26, 33, 29, 0.4);
   }
   .glow-border {
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  }
+  .bento-grid {
+    @apply grid gap-6 grid-cols-1 md:grid-cols-12;
   }
 }
 
