@@ -2,19 +2,14 @@ import { useMemo, useState } from 'react';
 import { useCrm } from '@/store/useCrm';
 import {
   LEAD_SOURCES, LeadSource, Transaction,
-  formatEuro, leadSourceLabel, sourceColorMap,
+  formatEuro, leadSourceLabel,
 } from '@/types/crm';
 import { PrivacyMask } from './PrivacyMask';
 import { TransactionsSheet } from './TransactionsSheet';
-import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
-} from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { usePrivacyMode } from '@/store/usePrivacyMode';
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select';
 
-type Timeframe = 'year' | 'all';
+const SLICE_COLORS = ['#4edea3', '#adc6ff', '#10b981', '#6ffbbe', '#0566d9'];
 
 interface SourceRow {
   source: LeadSource;
@@ -24,13 +19,15 @@ interface SourceRow {
   txs: Transaction[];
 }
 
+interface TooltipProps {
+  active?: boolean;
+  payload?: Array<{ value: number; name: string }>;
+}
+
 export const RevenueBySource = () => {
   const { clients, transactions } = useCrm();
   const { privacyMode } = usePrivacyMode();
   const [drill, setDrill] = useState<LeadSource | null>(null);
-  const [timeframe, setTimeframe] = useState<Timeframe>('year');
-
-  const currentYear = new Date().getFullYear();
 
   const rows = useMemo<SourceRow[]>(() => {
     const clientSource = new Map<string, LeadSource>();
@@ -46,138 +43,104 @@ export const RevenueBySource = () => {
 
     for (const t of transactions) {
       if (t.status !== 'Saldato') continue;
-      if (timeframe === 'year') {
-        const d = new Date(t.payment_date);
-        if (isNaN(d.getTime()) || d.getFullYear() !== currentYear) continue;
-      }
       const src = clientSource.get(t.client_id);
       if (!src) continue;
       acc[src].value += t.amount;
       acc[src].txs.push(t);
     }
 
-    return LEAD_SOURCES.map(src => ({
+    return LEAD_SOURCES.map((src, i) => ({
       source: src,
       label: leadSourceLabel[src],
       value: acc[src].value,
-      color: `hsl(var(--${sourceColorMap[src]}))`,
+      color: SLICE_COLORS[i % SLICE_COLORS.length],
       txs: acc[src].txs,
     }));
-  }, [clients, transactions, timeframe, currentYear]);
+  }, [clients, transactions]);
 
   const grandTotal = rows.reduce((s, r) => s + r.value, 0);
+  const visibleRows = rows.filter(r => r.value > 0);
   const drillRow = drill ? rows.find(r => r.source === drill) : null;
 
-  return (
-    <div className="bg-surface-container/30 rounded-2xl glass-panel border-white/10 shadow-none p-5">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-wider text-on-surface font-headline-sm">Valore per Fonte</p>
-          <p className="text-[11px] text-on-surface-variant font-body-sm">
-            {timeframe === 'year'
-              ? `Incassi ${currentYear} per canale di acquisizione`
-              : 'Incassi totali per canale di acquisizione'}
-          </p>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <Select value={timeframe} onValueChange={(v) => setTimeframe(v as Timeframe)}>
-            <SelectTrigger className="h-8 w-[140px] text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="year">Quest'anno</SelectItem>
-              <SelectItem value="all">Tutto il tempo</SelectItem>
-            </SelectContent>
-          </Select>
-          <p className="text-sm font-bold text-on-surface tabular-nums">
-            <PrivacyMask>{formatEuro(grandTotal)}</PrivacyMask>
-          </p>
-        </div>
+  const totalLabel = grandTotal >= 1000
+    ? `${(grandTotal / 1000).toFixed(grandTotal >= 10000 ? 0 : 1)}k`
+    : `${Math.round(grandTotal)}`;
+
+  const PieTooltip = ({ active, payload }: TooltipProps) => {
+    if (!active || !payload?.length) return null;
+    const { value, name } = payload[0];
+    return (
+      <div className="bg-[#242c27]/80 backdrop-blur-md border border-white/10 rounded-lg p-3 shadow-xl">
+        <p className="text-body-sm text-[#bbcabf] mb-1">{name}</p>
+        <p className="text-sm font-semibold text-[#4edea3] tabular-nums">
+          {privacyMode ? '••••' : formatEuro(value)}
+        </p>
       </div>
+    );
+  };
+
+  return (
+    <div className="bg-[#1a211d]/40 backdrop-blur-xl border border-white/10 shadow-lg rounded-2xl p-6 flex flex-col items-center justify-between relative overflow-hidden h-full">
+      <h3 className="font-semibold text-lg text-[#dde4dd] w-full text-left mb-6">Valore per Fonte</h3>
 
       {grandTotal === 0 ? (
-        <div className="mt-4 rounded-xl border border-dashed border-white/10 p-6 text-center">
-          <p className="text-xs text-on-surface-variant">
-            {timeframe === 'year'
-              ? `Nessun incasso registrato per il ${currentYear}.`
-              : 'Nessun incasso registrato. Registra il primo pagamento per popolare il grafico.'}
-          </p>
+        <div className="w-full flex-1 flex items-center justify-center rounded-xl border border-dashed border-white/10 p-6 text-center">
+          <p className="text-sm text-[#bbcabf]">Nessun incasso registrato.</p>
         </div>
       ) : (
         <>
-          {/* Recharts BarChart */}
-          <div className="mt-4 h-56 -ml-2">
+          <div className="relative w-48 h-48 my-auto">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={rows}
-                layout="vertical"
-                margin={{ top: 4, right: 12, left: 8, bottom: 4 }}
-                barCategoryGap={8}
-              >
-                <XAxis
-                  type="number"
-                  hide
-                  domain={[0, 'dataMax']}
-                />
-                <YAxis
-                  type="category"
-                  dataKey="label"
-                  axisLine={false}
-                  tickLine={false}
-                  width={110}
-                  tick={{ fill: '#bbcabf', fontSize: 11 }}
-                />
-                <Tooltip
-                  cursor={{ fill: 'rgba(255,255,255,0.08)' }}
-                  contentStyle={{
-                    borderRadius: 12,
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    background: '#1a211d',
-                    fontSize: 12,
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                  }}
-                  formatter={(value: number) => [
-                    privacyMode ? '••••' : formatEuro(value),
-                    'Incassi',
-                  ]}
-                  labelStyle={{ color: '#dde4dd', fontWeight: 600 }}
-                />
-                <Bar
+              <PieChart>
+                <Pie
+                  data={visibleRows}
                   dataKey="value"
-                  radius={[6, 6, 6, 6]}
-                  cursor="pointer"
-                  onClick={(data) => {
-                    const row = data as unknown as SourceRow;
-                    if (row?.value > 0) setDrill(row.source);
+                  nameKey="label"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={88}
+                  paddingAngle={2}
+                  stroke="none"
+                  onClick={(d) => {
+                    const r = d as unknown as SourceRow;
+                    if (r?.source) setDrill(r.source);
                   }}
+                  cursor="pointer"
                 >
-                  {rows.map((r) => (
+                  {visibleRows.map(r => (
                     <Cell key={r.source} fill={r.color} />
                   ))}
-                </Bar>
-              </BarChart>
+                </Pie>
+                <Tooltip content={<PieTooltip />} />
+              </PieChart>
             </ResponsiveContainer>
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+              <span className="text-xs uppercase tracking-wider text-[#bbcabf]">Totale</span>
+              <span className="text-2xl font-semibold text-[#dde4dd] tabular-nums">
+                <PrivacyMask>{totalLabel}</PrivacyMask>
+              </span>
+            </div>
           </div>
 
-          {/* Legend with values */}
-          <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5">
-            {rows.map(r => (
-              <button
-                key={r.source}
-                type="button"
-                disabled={r.value === 0}
-                onClick={() => setDrill(r.source)}
-                className="flex items-center justify-between text-xs rounded-md px-1.5 py-1 transition-smooth enabled:hover:bg-surface-variant/50 disabled:opacity-50 disabled:cursor-default"
-              >
-                <span className="flex items-center gap-2 min-w-0">
-                  <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: r.color }} />
-                  <span className="text-on-surface truncate">{r.label}</span>
-                </span>
-                <span className="font-semibold text-on-surface-variant tabular-nums">
-                  <PrivacyMask>{formatEuro(r.value)}</PrivacyMask>
-                </span>
-              </button>
-            ))}
+          <div className="w-full space-y-3 mt-6">
+            {visibleRows.map(r => {
+              const pct = grandTotal > 0 ? (r.value / grandTotal) * 100 : 0;
+              return (
+                <button
+                  key={r.source}
+                  type="button"
+                  onClick={() => setDrill(r.source)}
+                  className="w-full flex items-center justify-between text-sm rounded-md px-1 py-0.5 transition-colors hover:bg-white/5"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: r.color }} />
+                    <span className="text-[#bbcabf] truncate">{r.label}</span>
+                  </div>
+                  <span className="text-[#dde4dd] tabular-nums font-medium">{pct.toFixed(0)}%</span>
+                </button>
+              );
+            })}
           </div>
         </>
       )}
