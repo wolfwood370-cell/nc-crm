@@ -130,6 +130,21 @@ const Auth = () => {
     setIsSubmitting(false);
   };
 
+  const handleGoogleSignIn = async () => {
+    setIsSubmitting(true);
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
+    });
+    if (result.redirected) return;
+    if (result.error) {
+      const msg = result.error.message?.toLowerCase().includes("non autorizzata")
+        ? "Email non autorizzata ad accedere a questa piattaforma."
+        : result.error.message || "Impossibile completare l'accesso con Google.";
+      toast({ title: "Errore di accesso", description: msg, variant: "destructive" });
+      setIsSubmitting(false);
+    }
+  };
+
   const handleRecovery = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
