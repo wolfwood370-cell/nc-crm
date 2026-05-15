@@ -99,8 +99,8 @@ export const BottomNav = ({ onFabClick }: Props) => {
             <SheetContent side="right" className="w-[80vw] sm:w-[350px] flex flex-col p-0">
               <SheetHeader className="px-5 py-5 border-b border-border">
                 <div className="flex items-center gap-2">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 p-1 shadow-glow">
-                    <img src={logoIcon} alt="NC Business" width={40} height={40} className="w-full h-full object-contain object-center" />
+                  <div className="w-10 h-10 rounded-xl overflow-hidden shadow-sm flex-shrink-0 bg-white border border-white/10">
+                    <img src={logoIcon} alt="NC Business" width={40} height={40} className="w-full h-full object-cover object-center" />
                   </div>
                   <div className="text-left">
                     <SheetTitle className="text-sm font-bold leading-tight">NC Business</SheetTitle>
