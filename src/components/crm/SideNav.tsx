@@ -33,10 +33,10 @@ export const SideNav = ({ onFabClick }: Props) => {
     <aside className="hidden md:flex md:w-60 lg:w-64 shrink-0 flex-col border-r border-border bg-card/40 sticky top-0 h-screen">
       <div className="flex items-center gap-2 px-5 py-5">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl overflow-hidden shadow-glow">
-          <img src={logoIcon} alt="Life & Business OS" width={40} height={40} className="h-10 w-10 object-cover" />
+          <img src={logoIcon} alt="NC Business" width={40} height={40} className="h-10 w-10 object-cover" />
         </div>
         <div>
-          <p className="text-sm font-bold leading-tight">Life & Business OS</p>
+          <p className="text-sm font-bold leading-tight">NC Business</p>
           <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Centro di Comando</p>
         </div>
       </div>
