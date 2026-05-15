@@ -100,7 +100,7 @@ export const BottomNav = ({ onFabClick }: Props) => {
               <SheetHeader className="px-5 py-5 border-b border-border">
                 <div className="flex items-center gap-2">
                   <div className="w-10 h-10 rounded-xl overflow-hidden shadow-sm flex-shrink-0 bg-white border border-white/10">
-                    <img src={logoIcon} alt="NC Business" width={40} height={40} className="w-full h-full object-cover object-center scale-[1.1]" />
+                    <img src={logoIcon} alt="NC Business" width={40} height={40} className="w-full h-full object-cover object-center scale-[1.15]" />
                   </div>
                   <div className="text-left">
                     <SheetTitle className="text-sm font-bold leading-tight">NC Business</SheetTitle>
