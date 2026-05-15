@@ -33,7 +33,7 @@ export const SideNav = ({ onFabClick }: Props) => {
     <aside className="hidden md:flex md:w-60 lg:w-64 shrink-0 flex-col border-r border-border bg-card/40 sticky top-0 h-screen">
       <div className="flex items-center gap-2 px-5 py-5">
         <div className="w-10 h-10 rounded-xl overflow-hidden shadow-sm flex-shrink-0 bg-white border border-white/10">
-          <img src={logoIcon} alt="NC Business" width={40} height={40} className="w-full h-full object-cover object-center scale-[1.3]" />
+          <img src={logoIcon} alt="NC Business" width={40} height={40} className="w-full h-full object-cover object-center scale-[1.1]" />
         </div>
         <div>
           <p className="text-sm font-bold leading-tight">NC Business</p>
