@@ -82,7 +82,7 @@ const Auth = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    document.title = "Accedi · Life & Business OS";
+    document.title = "Accedi · NC Business";
   }, []);
 
   if (loading) {
@@ -156,7 +156,7 @@ const Auth = () => {
               <Dumbbell className="h-5 w-5 text-primary-foreground" strokeWidth={2.5} />
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight text-foreground">Life & Business OS</h1>
+              <h1 className="text-xl font-bold tracking-tight text-foreground">NC Business</h1>
               <p className="text-xs text-muted-foreground">Centro di Comando</p>
             </div>
           </div>
@@ -188,7 +188,7 @@ const Auth = () => {
               <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-primary shadow-glow">
                 <Dumbbell className="h-5 w-5 text-primary-foreground" strokeWidth={2.5} />
               </div>
-              <h1 className="text-lg font-bold text-foreground">Life & Business OS</h1>
+              <h1 className="text-lg font-bold text-foreground">NC Business</h1>
             </div>
 
             {/* Glassmorphism card */}
